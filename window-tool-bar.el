@@ -1,32 +1,37 @@
 ;;; -*- lexical-binding: t -*-
 ;;;
 ;;; TODO:
-;;; * Add a bit more documentation.
-;;; * Upload to github, internal git repo, and MELPA.
+;;;; For 1.0
+;;; * Make disabled properties display better (no mouse over)
 ;;; * Play with this on for a bit.
+;;; * Upload to MELPA.
+
+;;;; For 2.0
 ;;; * Properly support button labels
 ;;; * Make this work on non-graphical frames.
-;;; * Add customization option: ignore-default-tool-bar-map
-;;; * Make disabled properties display better (no mouse over)
 ;;; * Add utility function to clean up Emacs toolbars (Info, grep)
+;;;
+;;; * Add a bit more documentation.
+;;; * Add customization option: ignore-default-tool-bar-map
 ;;; * Make tab-line dragging resize the window
 (require 'tab-line)
 
-(defun tab-line-from-tool-bar ()
+;;;###autoload
+(defun window-tool-bar-string ()
   (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
-    (mapconcat #'tab-line-convert-keymap-entry toolbar-menu " ")))
+    (mapconcat #'window-tool-bar--keymap-entry-to-string toolbar-menu " ")))
 
-(defun tab-line-convert-keymap-entry (menu-item)
+(defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation."
   (pcase menu-item
     (`(,key menu-item ,name . ,props)
-     ;; Normal menu item, turn into tab-line-button
+     ;; Normal menu item, turn into propertized string button
      (let ((str (format "[%s]" name)))
        (setq str (propertize str
                              'mouse-face 'tab-line-highlight
                              'keymap (define-keymap
                                        "<follow-link>" 'mouse-face
-                                       "<tab-line> <mouse-2>" #'tlftb--call-button)))
+                                       "<tab-line> <mouse-2>" #'window-tool-bar--call-button)))
        (when-let ((spec (plist-get menu-item :image)))
          (setq str (propertize str
                                'display spec)))
@@ -39,7 +44,7 @@
     (`(,_ "--")
      "|")))
 
-(defun tlftb--call-button ()
+(defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
   (interactive)
   (when (mouse-event-p last-command-event)
@@ -50,18 +55,22 @@
                (cmd (lookup-key global-map (vector 'tool-bar key))))
           (call-interactively cmd))))))
 
-(define-minor-mode tab-line-from-tool-bar-mode
+;;;###autoload
+(define-minor-mode window-tool-bar-mode
   "Toggle display of the toolbar in the tab line of the current buffer."
   :lighter nil
-  (if (and tab-line-from-tool-bar-mode
+  (if (and window-tool-bar-mode
            (not (eq tool-bar-map (default-value 'tool-bar-map))))
-      (setq tab-line-format '(:eval (tab-line-from-tool-bar)))
+      (setq tab-line-format '(:eval (window-tool-bar-string)))
     (setq tab-line-format nil)))
 
-(defun tab-line-from-tool-bar--turn-on ()
-  (tab-line-from-tool-bar-mode 1))
+(defun window-tool-bar--turn-on ()
+  (window-tool-bar-mode 1))
 
-(define-globalized-minor-mode global-tab-line-from-tool-bar-mode
-  tab-line-from-tool-bar-mode tab-line-from-tool-bar--turn-on
-  (add-hook 'isearch-mode-hook #'tab-line-from-tool-bar--turn-on)
-  (add-hook 'isearch-mode-end-hook #'tab-line-from-tool-bar--turn-on))
+;;;###autoload
+(define-globalized-minor-mode global-window-tool-bar-mode
+  window-tool-bar-mode window-tool-bar--turn-on
+  (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
+  (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
+
+(provide 'window-tool-bar)
