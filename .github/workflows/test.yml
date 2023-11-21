@@ -1,0 +1,29 @@
+name: test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - emacs_version: 29.1
+            warnings_as_errors: true
+    steps:
+      - uses: purcell/setup-emacs@v6.0
+        with:
+          version: ${{ matrix.emacs_version }}
+      - uses: actions/checkout@v4
+      - uses: leotaku/elisp-check@master
+        with:
+          check: melpa
+          file: '*.el'
+          warnings_as_errors: ${{ matrix.warnings_as_errors }}
