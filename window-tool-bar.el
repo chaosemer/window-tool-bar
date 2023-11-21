@@ -2,6 +2,7 @@
 ;;;
 ;;; TODO:
 ;;;; For 1.0
+;;; * Fix package style.
 ;;; * Play with this on for a bit.
 ;;; * Upload to MELPA.
 
