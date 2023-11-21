@@ -2,7 +2,6 @@
 ;;;
 ;;; TODO:
 ;;;; For 1.0
-;;; * Make disabled properties display better (no mouse over)
 ;;; * Play with this on for a bit.
 ;;; * Upload to MELPA.
 
@@ -26,15 +25,21 @@
   (pcase menu-item
     (`(,key menu-item ,name . ,props)
      ;; Normal menu item, turn into propertized string button
-     (let ((str (format "[%s]" name)))
-       (setq str (propertize str
-                             'mouse-face 'tab-line-highlight
-                             'keymap (define-keymap
-                                       "<follow-link>" 'mouse-face
-                                       "<tab-line> <mouse-2>" #'window-tool-bar--call-button)))
+     (let* ((str (format "[%s]" name))
+            (enable-form (plist-get menu-item :enable))
+            (enabled (or (not enable-form)
+                         (eval enable-form))))
+       (setq str (apply #'propertize
+                        (append (list str)
+                                (when enabled
+                                  `(mouse-face tab-line-highlight
+                                               keymap ,(define-keymap
+                                                         "<follow-link>" 'mouse-face
+                                                         "<tab-line> <mouse-2>" #'window-tool-bar--call-button))))))
        (when-let ((spec (plist-get menu-item :image)))
          (setq str (propertize str
-                               'display spec)))
+                               'display (append spec
+                                                (unless enabled '(:conversion disabled))))))
        (when-let ((spec (plist-get menu-item :help)))
          (setq str (propertize str
                                'help-echo spec)))
