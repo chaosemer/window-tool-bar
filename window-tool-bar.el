@@ -36,6 +36,9 @@
 ;; Remaining work to hit 1.0:
 ;;
 ;; * Play with this on for a bit.
+;; * Optimize allocations in `window-tool-bar-string' by having it
+;;   instead return a list of strings, so only items that can become
+;;   disabled are recalculated.
 ;; * Upload to MELPA.
 ;;
 ;; Post 1.0 work:
