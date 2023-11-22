@@ -1,30 +1,77 @@
-;;; -*- lexical-binding: t -*-
-;;;
-;;; TODO:
-;;;; For 1.0
-;;; * Fix package style.
-;;; * Play with this on for a bit.
-;;; * Upload to MELPA.
+;;; window-tool-bar.el --- Add tool bars inside windows -*- lexical-binding: t -*-
 
-;;;; For 2.0
-;;; * Properly support button labels
-;;; * Make this work on non-graphical frames.
-;;; * Add utility function to clean up Emacs toolbars (Info, grep)
-;;;
-;;; * Add a bit more documentation.
-;;; * Add customization option: ignore-default-tool-bar-map
-;;; * Make tab-line dragging resize the window
+;; Copyright 2023 Jared Finder
+;; Author: Jared Finder <jared@finder.org>
+;; Created: Nov 21, 2023
+;; Version: 0.1-beta
+;; Keywords: mouse
+;; URL: http://github.com/chaosemer/window-tool-bar
+;; Package-Requires: ((emacs "29.1"))
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;;
+;; This is in a very early state.  The eventual goals are as follows:
+;;
+;; * Add tool bars to windows instead of frames.
+;; * Clean up the default tool bar bindings.
+;; * Make tool bars work in terminals.
+
+;;; Todo:
+;;
+;; Remaining work to hit 1.0:
+;;
+;; * Play with this on for a bit.
+;; * Upload to MELPA.
+;;
+;; Post 1.0 work:
+;;
+;; * Properly support button labels
+;; * Make this work on non-graphical frames.
+;; * Add utility function to clean up Emacs toolbars (Info, grep)
+;;
+;; * Add a bit more documentation.
+;; * Add customization option: ignore-default-tool-bar-map
+;; * Make tab-line dragging resize the window
+
+;;; Code:
+
 (require 'tab-line)
+
+(defgroup window-tool-bar nil
+  "Tool bars per-window."
+  :group 'convenience)
 
 ;;;###autoload
 (defun window-tool-bar-string ()
+  "Return a (propertized) string for the tool bar.
+
+This is for when you want more customizations than
+`window-tool-bar-mode' provides.  Commonly added to the variable
+`tab-line-format', `header-line-format', or `mode-line-format'"
   (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
     (mapconcat #'window-tool-bar--keymap-entry-to-string toolbar-menu " ")))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
-  "Convert MENU-ITEM into a (propertized) string representation."
+  "Convert MENU-ITEM into a (propertized) string representation.
+
+MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (pcase menu-item
-    (`(,key menu-item ,name . ,props)
+    (`(,key menu-item ,name . ,_)
      ;; Normal menu item, turn into propertized string button
      (let* ((str (format "[%s]" name))
             (enable-form (plist-get menu-item :enable))
@@ -71,12 +118,16 @@
     (setq tab-line-format nil)))
 
 (defun window-tool-bar--turn-on ()
+  "Internal function called by `global-window-tool-bar-mode'."
   (window-tool-bar-mode 1))
 
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
   window-tool-bar-mode window-tool-bar--turn-on
+  :group 'window-tool-bar
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
 (provide 'window-tool-bar)
+
+;;; window-tool-bar.el ends here
