@@ -67,7 +67,10 @@ This is for when you want more customizations than
 `window-tool-bar-mode' provides.  Commonly added to the variable
 `tab-line-format', `header-line-format', or `mode-line-format'"
   (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
-    (mapconcat #'window-tool-bar--keymap-entry-to-string toolbar-menu " ")))
+    (mapconcat #'window-tool-bar--keymap-entry-to-string toolbar-menu
+               ;; Without spaces between the text, hovering highlights
+               ;; all adjacent buttons.
+               (propertize " " 'invisible t))))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
@@ -90,6 +93,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
        (when-let ((spec (plist-get menu-item :image)))
          (setq str (propertize str
                                'display (append spec
+                                                '(:margin 2)
                                                 (unless enabled '(:conversion disabled))))))
        (when-let ((spec (plist-get menu-item :help)))
          (setq str (propertize str
