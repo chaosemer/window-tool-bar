@@ -45,6 +45,7 @@
 ;;
 ;; * Properly support button labels
 ;; * Make this work on non-graphical frames.
+;; * Show keyboard shortcut on help text.
 ;; * Add utility function to clean up Emacs toolbars (Info, grep)
 ;;
 ;; * Add a bit more documentation.
