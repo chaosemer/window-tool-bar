@@ -59,6 +59,19 @@
   "Tool bars per-window."
   :group 'convenience)
 
+(defvar window-tool-bar--button-keymap
+  (define-keymap
+    "<follow-link>" 'mouse-face
+    ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
+    ;; bar is not a place the point can travel to.
+    "<tab-line> <mouse-1>" #'window-tool-bar--call-button
+    "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
+    "<tab-line> <tripple-mouse-1>" #'window-tool-bar--call-button
+    "<tab-line> <mouse-2>" #'window-tool-bar--call-button
+    "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
+    "<tab-line> <tripple-mouse-2>" #'window-tool-bar--call-button)
+  "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
+
 ;;;###autoload
 (defun window-tool-bar-string ()
   "Return a (propertized) string for the tool bar.
@@ -87,9 +100,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                         (append (list str)
                                 (when enabled
                                   `(mouse-face tab-line-highlight
-                                               keymap ,(define-keymap
-                                                         "<follow-link>" 'mouse-face
-                                                         "<tab-line> <mouse-2>" #'window-tool-bar--call-button))))))
+                                    keymap ,window-tool-bar--button-keymap)))))
        (when-let ((spec (plist-get menu-item :image)))
          (setq str (propertize str
                                'display (append spec
