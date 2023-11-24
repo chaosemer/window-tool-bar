@@ -67,10 +67,10 @@
     ;; bar is not a place the point can travel to.
     "<tab-line> <mouse-1>" #'window-tool-bar--call-button
     "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
-    "<tab-line> <tripple-mouse-1>" #'window-tool-bar--call-button
+    "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
     "<tab-line> <mouse-2>" #'window-tool-bar--call-button
     "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
-    "<tab-line> <tripple-mouse-2>" #'window-tool-bar--call-button)
+    "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button)
   "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
 
 ;;;###autoload
