@@ -91,6 +91,13 @@ This is for when you want more customizations than
 
 MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (pcase menu-item
+    ;; Separators
+    (`(,_ "--")
+     "|")
+    (`(,_ menu-item ,(pred (string-prefix-p "--")))
+     "|")
+
+    ;; Main workhorse
     (`(,key menu-item ,name . ,_)
      ;; Normal menu item, turn into propertized string button
      (let* ((str (format "[%s]" name))
@@ -112,9 +119,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                                'help-echo spec)))
        (setq str (propertize str
                              'tool-bar-key key))
-       str))
-    (`(,_ "--")
-     "|")))
+       str))))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
