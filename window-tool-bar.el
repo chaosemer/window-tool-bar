@@ -76,6 +76,89 @@
 (require 'mwheel)
 (require 'tab-line)
 
+;;; Benchmarking code
+;;
+;; Refreshing the tool bar is computationally simple, but generates a
+;; lot of garbage.  So this benchmarking focuses on garbage
+;; generation.  Since it has to run after most commands, generating
+;; significantly more garbage will cause noticeable performance
+;; degration.
+;;
+;; The refresh has two steps:
+;;
+;; Step 1: Look up the <tool-bar> map.
+;; Step 2: Generate a Lisp string using text properties for the tool
+;; bar string.
+;;
+;; Additionally, we keep track of the percentage of commands that
+;; acutally created a refresh.
+(defvar window-tool-bar--memory-use-delta-step1 (make-list 7 0)
+  "Absolute delta of memory use counters during step 1.
+This is a list in the same structure as `memory-use-counts'.")
+(defvar window-tool-bar--memory-use-delta-step2 (make-list 7 0)
+  "Absolute delta of memory use counters during step 2.
+This is a list in the same structure as `memory-use-counts'.")
+(defvar window-tool-bar--refresh-done-count 0
+  "Number of tool bar string refreshes run.
+The total number of requests is the sum of this and
+`window-tool-bar--refresh-skipped-count'.")
+(defvar window-tool-bar--refresh-skipped-count 0
+  "Number of tool bar string refreshes that were skipped.
+The total number of requests is the sum of this and
+`window-tool-bar--refresh-done-count'.")
+
+(defun window-tool-bar--memory-use-avg-step1 ()
+  "Return average memory use delta during step 1."
+  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+          window-tool-bar--memory-use-delta-step1))
+
+(defun window-tool-bar--memory-use-avg-step2 ()
+  "Return average memory use delta during step 2."
+  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+          window-tool-bar--memory-use-delta-step2))
+
+(declare-function time-stamp-string "time-stamp")
+
+(defun window-tool-bar-show-memory-use ()
+  "Pop up a window showing the memory use metrics."
+  (interactive)
+  (require 'time-stamp)
+  (save-selected-window
+    (pop-to-buffer "*WTB Memory Report*")
+    (unless (eq major-mode 'special-mode)
+      (special-mode))
+
+    (goto-char (point-max))
+    (let ((inhibit-read-only t))
+      (insert (propertize (concat "Function: window-tool-bar-string "
+                                  (time-stamp-string))
+                          'face 'underline 'font-lock-face 'underline)
+              "\n\n")
+      (window-tool-bar--insert-memory-use "Step 1" (window-tool-bar--memory-use-avg-step1))
+      (window-tool-bar--insert-memory-use "Step 2" (window-tool-bar--memory-use-avg-step2))
+      (insert (format "Refresh count  %d\n" window-tool-bar--refresh-done-count)
+              (format "Refresh executed percent %.2f\n"
+                      (/ window-tool-bar--refresh-done-count
+                         (+ window-tool-bar--refresh-done-count window-tool-bar--refresh-skipped-count)
+                         1.0))
+              "\n"))))
+
+(defun window-tool-bar--insert-memory-use (label avg-memory-use)
+  "Insert memory use into current buffer.
+
+LABEL: A prefix string to be in front of the data.
+AVG-MEMORY-USE: A list of averages, with the same meaning as
+  `memory-use-counts'."
+  (let* ((label-len (length label))
+         (padding (make-string label-len ?\s)))
+    (insert (format "%s  %8.2f Conses\n" label (elt avg-memory-use 0)))
+    (insert (format "%s  %8.2f Floats\n" padding (elt avg-memory-use 1)))
+    (insert (format "%s  %8.2f Vector cells\n" padding (elt avg-memory-use 2)))
+    (insert (format "%s  %8.2f Symbols\n" padding (elt avg-memory-use 3)))
+    (insert (format "%s  %8.2f String chars\n" padding (elt avg-memory-use 4)))
+    (insert (format "%s  %8.2f Intervals\n" padding (elt avg-memory-use 5)))
+    (insert (format "%s  %8.2f Strings\n" padding (elt avg-memory-use 6)))))
+
 (defgroup window-tool-bar nil
   "Tool bars per-window."
   :group 'convenience)
@@ -118,15 +201,28 @@
 This is for when you want more customizations than
 `window-tool-bar-mode' provides.  Commonly added to the variable
 `tab-line-format', `header-line-format', or `mode-line-format'"
-  (when (or (null window-tool-bar-string--cache)
-            (window-tool-bar--last-command-triggers-refresh-p))
-    (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
-      (setf window-tool-bar-string--cache
-            (mapconcat #'window-tool-bar--keymap-entry-to-string
-                       toolbar-menu
-                       ;; Without spaces between the text, hovering
-                       ;; highlights all adjacent buttons.
-                       (propertize " " 'invisible t)))))
+  (if (or (null window-tool-bar-string--cache)
+          (window-tool-bar--last-command-triggers-refresh-p))
+      (let* ((mem0 (memory-use-counts))
+             (toolbar-menu (cdr (keymap-global-lookup "<tool-bar>")))
+             (mem1 (memory-use-counts))
+             (result (mapconcat #'window-tool-bar--keymap-entry-to-string
+                                toolbar-menu
+                                ;; Without spaces between the text, hovering
+                                ;; highlights all adjacent buttons.
+                                (propertize " " 'invisible t)))
+             (mem2 (memory-use-counts)))
+        (cl-mapl (lambda (l-init l0 l1)
+                   (cl-incf (car l-init) (- (car l1) (car l0))))
+                 window-tool-bar--memory-use-delta-step1 mem0 mem1)
+        (cl-mapl (lambda (l-init l1 l2)
+                   (cl-incf (car l-init) (- (car l2) (car l1))))
+                 window-tool-bar--memory-use-delta-step2 mem1 mem2)
+
+        (setf window-tool-bar-string--cache
+              result)
+        (cl-incf window-tool-bar--refresh-done-count))
+    (cl-incf window-tool-bar--refresh-skipped-count))
 
   window-tool-bar-string--cache)
 
