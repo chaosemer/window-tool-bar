@@ -94,13 +94,15 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     ;; Separators
     (`(,_ "--")
      "|")
-    (`(,_ menu-item ,(pred (string-prefix-p "--")))
+    (`(,_ menu-item ,(and (pred stringp)
+                          (pred (string-prefix-p "--"))))
      "|")
 
     ;; Main workhorse
-    (`(,key menu-item ,name . ,_)
+    (`(,key menu-item ,name-expr . ,_)
      ;; Normal menu item, turn into propertized string button
-     (let* ((str (format "[%s]" name))
+     (let* ((name (eval name-expr))
+            (str (format "[%s]" (eval name-expr)))
             (enable-form (plist-get menu-item :enable))
             (enabled (or (not enable-form)
                          (eval enable-form))))
@@ -114,9 +116,11 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                                'display (append spec
                                                 '(:margin 2)
                                                 (unless enabled '(:conversion disabled))))))
-       (when-let ((spec (plist-get menu-item :help)))
+       (if-let ((spec (plist-get menu-item :help)))
+           (setq str (propertize str
+                                 'help-echo spec))
          (setq str (propertize str
-                               'help-echo spec)))
+                               'help-echo name)))
        (setq str (propertize str
                              'tool-bar-key key))
        str))))
