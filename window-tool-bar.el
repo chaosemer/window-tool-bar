@@ -99,31 +99,32 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
      "|")
 
     ;; Main workhorse
-    (`(,key menu-item ,name-expr . ,_)
+    (`(,key menu-item ,name-expr ,binding . ,_)
      ;; Normal menu item, turn into propertized string button
-     (let* ((name (eval name-expr))
-            (str (format "[%s]" (eval name-expr)))
-            (enable-form (plist-get menu-item :enable))
-            (enabled (or (not enable-form)
-                         (eval enable-form))))
-       (setq str (apply #'propertize
-                        (append (list str)
-                                (when enabled
-                                  `(mouse-face tab-line-highlight
-                                    keymap ,window-tool-bar--button-keymap)))))
-       (when-let ((spec (plist-get menu-item :image)))
-         (setq str (propertize str
-                               'display (append spec
-                                                '(:margin 2)
-                                                (unless enabled '(:conversion disabled))))))
-       (if-let ((spec (plist-get menu-item :help)))
+     (when binding                      ; If no binding exists, then button is hidden.
+       (let* ((name (eval name-expr))
+              (str (format "[%s]" (eval name-expr)))
+              (enable-form (plist-get menu-item :enable))
+              (enabled (or (not enable-form)
+                           (eval enable-form))))
+         (setq str (apply #'propertize
+                          (append (list str)
+                                  (when enabled
+                                    `(mouse-face tab-line-highlight
+                                                 keymap ,window-tool-bar--button-keymap)))))
+         (when-let ((spec (plist-get menu-item :image)))
            (setq str (propertize str
-                                 'help-echo spec))
+                                 'display (append spec
+                                                  '(:margin 2)
+                                                  (unless enabled '(:conversion disabled))))))
+         (if-let ((spec (plist-get menu-item :help)))
+             (setq str (propertize str
+                                   'help-echo spec))
+           (setq str (propertize str
+                                 'help-echo name)))
          (setq str (propertize str
-                               'help-echo name)))
-       (setq str (propertize str
-                             'tool-bar-key key))
-       str))))
+                               'tool-bar-key key))
+         str)))))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
