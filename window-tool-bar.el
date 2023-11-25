@@ -58,18 +58,17 @@
   "Tool bars per-window."
   :group 'convenience)
 
-(defvar window-tool-bar--button-keymap
-  (define-keymap
-    "<follow-link>" 'mouse-face
-    ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
-    ;; bar is not a place the point can travel to.
-    "<tab-line> <mouse-1>" #'window-tool-bar--call-button
-    "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
-    "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
-    "<tab-line> <mouse-2>" #'window-tool-bar--call-button
-    "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
-    "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button)
-  "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
+(defvar-keymap window-tool-bar--button-keymap
+  :doc "Keymap used by `window-tool-bar--keymap-entry-to-string'."
+  "<follow-link>" 'mouse-face
+  ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
+  ;; bar is not a place the point can travel to.
+  "<tab-line> <mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <mouse-2>" #'window-tool-bar--call-button
+  "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
+  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button)
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 (defvar-local window-tool-bar-string--cache nil
@@ -105,10 +104,9 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                               (pred (string-prefix-p "--")))))
      "|")
 
-    ;; Main workhorse
+    ;; Menu item, turn into propertized string button
     (`(,key menu-item ,name-expr ,binding . ,_)
-     ;; Normal menu item, turn into propertized string button
-     (when binding                      ; If no binding exists, then button is hidden.
+     (when binding      ; If no binding exists, then button is hidden.
        (let* ((name (eval name-expr))
               (str (format "[%s]" (eval name-expr)))
               (len (length str))
