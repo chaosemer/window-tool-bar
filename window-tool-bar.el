@@ -92,10 +92,9 @@ This is for when you want more customizations than
 MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (pcase menu-item
     ;; Separators
-    (`(,_ "--")
-     "|")
-    (`(,_ menu-item ,(and (pred stringp)
-                          (pred (string-prefix-p "--"))))
+    ((or `(,_ "--")
+         `(,_ menu-item ,(and (pred stringp)
+                              (pred (string-prefix-p "--")))))
      "|")
 
     ;; Main workhorse
