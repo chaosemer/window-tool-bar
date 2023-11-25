@@ -3,6 +3,8 @@
 Add tool bars to windows.  Clean up the default tool bar bindings.
 Make tool bars work in terminals.
 
+![A picture is worth a thousand words](images/screenshot.png)
+
 ## Installation
 
 The easiest way to install window-tool-bar-mode is on GNU Emacs 29 via
