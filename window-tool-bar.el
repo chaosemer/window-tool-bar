@@ -36,9 +36,6 @@
 ;; Remaining work to hit 1.0:
 ;;
 ;; * Play with this on for a bit.
-;; * Optimize allocations in `window-tool-bar-string' by having it
-;;   instead return a list of strings, so only items that can become
-;;   disabled are recalculated.
 ;; * Upload to MELPA.
 ;;
 ;; Post 1.0 work:
@@ -54,6 +51,7 @@
 
 ;;; Code:
 
+(require 'mwheel)
 (require 'tab-line)
 
 (defgroup window-tool-bar nil
@@ -72,6 +70,10 @@
     "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
     "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button)
   "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
+(fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
+
+(defvar-local window-tool-bar-string--cache nil
+  "Cache for previous result of `window-tool-bar-string'.")
 
 ;;;###autoload
 (defun window-tool-bar-string ()
@@ -80,11 +82,17 @@
 This is for when you want more customizations than
 `window-tool-bar-mode' provides.  Commonly added to the variable
 `tab-line-format', `header-line-format', or `mode-line-format'"
-  (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
-    (mapconcat #'window-tool-bar--keymap-entry-to-string toolbar-menu
-               ;; Without spaces between the text, hovering highlights
-               ;; all adjacent buttons.
-               (propertize " " 'invisible t))))
+  (when (or (null window-tool-bar-string--cache)
+            (window-tool-bar--last-command-triggers-refresh-p))
+    (let ((toolbar-menu (cdr (keymap-global-lookup "<tool-bar>"))))
+      (setf window-tool-bar-string--cache
+            (mapconcat #'window-tool-bar--keymap-entry-to-string
+                       toolbar-menu
+                       ;; Without spaces between the text, hovering
+                       ;; highlights all adjacent buttons.
+                       (propertize " " 'invisible t)))))
+
+  window-tool-bar-string--cache)
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
@@ -103,26 +111,27 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
      (when binding                      ; If no binding exists, then button is hidden.
        (let* ((name (eval name-expr))
               (str (format "[%s]" (eval name-expr)))
+              (len (length str))
               (enable-form (plist-get menu-item :enable))
               (enabled (or (not enable-form)
                            (eval enable-form))))
-         (setq str (apply #'propertize
-                          (append (list str)
-                                  (when enabled
-                                    `(mouse-face tab-line-highlight
-                                                 keymap ,window-tool-bar--button-keymap)))))
+         (when enabled
+           (add-text-properties 0 len
+                                '(mouse-face tab-line-highlight
+                                  keymap window-tool-bar--button-keymap)
+                                str))
          (when-let ((spec (plist-get menu-item :image)))
-           (setq str (propertize str
-                                 'display (append spec
-                                                  '(:margin 2)
-                                                  (unless enabled '(:conversion disabled))))))
-         (if-let ((spec (plist-get menu-item :help)))
-             (setq str (propertize str
-                                   'help-echo spec))
-           (setq str (propertize str
-                                 'help-echo name)))
-         (setq str (propertize str
-                               'tool-bar-key key))
+           (put-text-property 0 len
+                              'display
+                              (append spec
+                                      (if enabled '(:margin 2)
+                                        '(:margin 2 :conversion disabled)))
+                              str))
+         (put-text-property 0 len
+                            'help-echo
+                            (or (plist-get menu-item :help) name)
+                            str)
+         (put-text-property 0 len 'tool-bar-key key str)
          str)))))
 
 (defun window-tool-bar--call-button ()
@@ -135,6 +144,38 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                (key (get-text-property (cdr str) 'tool-bar-key (car str)))
                (cmd (lookup-key global-map (vector 'tool-bar key))))
           (call-interactively cmd))))))
+
+(defvar window-tool-bar--ignored-event-types
+  (list 'mouse-movement
+        mouse-wheel-up-event mouse-wheel-up-alternate-event
+        mouse-wheel-down-event mouse-wheel-down-alternate-event
+        mouse-wheel-left-event mouse-wheel-left-alternate-event
+        mouse-wheel-right-event mouse-wheel-right-alternate-event
+        'pinch)
+  "Cache for `window-tool-bar--last-command-triggers-refresh-p'.")
+
+(defun window-tool-bar--last-command-triggers-refresh-p ()
+  "Test if the recent command or event should trigger a tool bar refresh."
+  (let ((type (event-basic-type last-command-event)))
+    (and
+     ;; Assume that key presses and button presses are the only user
+     ;; interactions that can alter the tool bar.  Specifically, this
+     ;; excludes mouse movement, mouse wheel scroll, and pinch.
+     (not (member type window-tool-bar--ignored-event-types))
+     ;; Assume that any command that triggers shift select can't alter
+     ;; the tool bar.  This excludes pure navigation commands.
+     (not (window-tool-bar--command-triggers-shift-select-p last-command))
+     ;; Assume that self-insert-command won't alter the tool bar.
+     ;; This is the most commonly executed command.
+     (not (eq last-command 'self-insert-command)))))
+
+(defun window-tool-bar--command-triggers-shift-select-p (command)
+  "Test if COMMAND would trigger shift select."
+  (let* ((form (interactive-form command))
+         (spec (car-safe (cdr-safe form))))
+    (and (eq (car-safe form) 'interactive)
+         (stringp spec)
+         (seq-position spec ?^))))
 
 ;;;###autoload
 (define-minor-mode window-tool-bar-mode
