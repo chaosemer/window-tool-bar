@@ -14,9 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - emacs_version: 29.1
-            warnings_as_errors: true
+        emacs_version: [29.1]
     steps:
       - uses: purcell/setup-emacs@v6.0
         with:
@@ -26,4 +24,4 @@ jobs:
         with:
           check: melpa
           file: '*.el'
-          warnings_as_errors: ${{ matrix.warnings_as_errors }}
+          warnings_as_errors: true
