@@ -43,6 +43,11 @@
 ;; * Properly support button labels
 ;; * Make this work on non-graphical frames.
 ;; * Show keyboard shortcut on help text.
+;; * Clean up Emacs toolbars
+;;     * Default: Remove defaul tool-bar
+;;     * grep, vc: Remove default tool-bar inherited
+;;     * info: Remove Next / Prev / Up, which is already in the header
+;;     * smerge: Add toolbar for next/prev
 ;; * Add utility function to clean up Emacs toolbars (Info, grep)
 ;;
 ;; * Add a bit more documentation.
