@@ -68,8 +68,23 @@
   "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
   "<tab-line> <mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
-  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button)
+  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
+
+  ;; Mouse down events do nothing.  A binding is needed so isearch
+  ;; does not exit when the tab bar is clicked.
+  "<tab-line> <down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <double-down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
+  "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
+
+;; Register bindings that stay in isearch.  Technically, these
+;; commands don't pop up a menu but they act very similar in that they
+;; end up calling an actual command via `call-interactively'.
+(push 'window-tool-bar--call-button isearch-menu-bar-commands)
+(push 'window-tool-bar--ignore isearch-menu-bar-commands)
 
 (defvar-local window-tool-bar-string--cache nil
   "Cache for previous result of `window-tool-bar-string'.")
@@ -143,6 +158,11 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                (cmd (lookup-key global-map (vector 'tool-bar key))))
           (call-interactively cmd))))))
 
+(defun window-tool-bar--ignore ()
+  "Do nothing.  This command exists for isearch."
+  (interactive)
+  nil)
+
 (defvar window-tool-bar--ignored-event-types
   (list 'mouse-movement
         mouse-wheel-up-event mouse-wheel-up-alternate-event
@@ -186,7 +206,8 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
 (defun window-tool-bar--turn-on ()
   "Internal function called by `global-window-tool-bar-mode'."
-  (window-tool-bar-mode 1))
+  (when global-window-tool-bar-mode
+    (window-tool-bar-mode 1)))
 
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
