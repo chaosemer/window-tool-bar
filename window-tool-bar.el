@@ -80,6 +80,12 @@
   "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
+;; Register bindings that stay in isearch.  Technically, these
+;; commands don't pop up a menu but they act very similar in that they
+;; end up calling an actual command via `call-interactively'.
+(push 'window-tool-bar--call-button isearch-menu-bar-commands)
+(push 'window-tool-bar--ignore isearch-menu-bar-commands)
+
 (defvar-local window-tool-bar-string--cache nil
   "Cache for previous result of `window-tool-bar-string'.")
 
@@ -209,13 +215,6 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   :group 'window-tool-bar
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
-
-(with-eval-after-load 'isearch
-  ;; Technically, these commands don't pop up a menu but they act very
-  ;; similar in that they end up calling an actual command via
-  ;; `call-interactively'.
-  (push 'window-tool-bar--call-button isearch-menu-bar-commands)
-  (push 'window-tool-bar--ignore isearch-menu-bar-commands))
 
 (provide 'window-tool-bar)
 
