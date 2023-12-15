@@ -33,22 +33,26 @@
 
 ;;; Todo:
 ;;
-;; Remaining work to hit 1.0:
+;; Remaining work to hit 0.1:
 ;;
 ;; * Play with this on for a bit.
-;; * Upload to MELPA.
 ;;
-;; Post 1.0 work:
+;; Targeting 0.2:
 ;;
 ;; * Properly support button labels
 ;; * Make this work on non-graphical frames.
-;; * Show keyboard shortcut on help text.
+;;
+;; Targeting 1.0:
+;;
 ;; * Clean up Emacs toolbars
 ;;     * Default: Remove defaul tool-bar
 ;;     * grep, vc: Remove default tool-bar inherited
 ;;     * info: Remove Next / Prev / Up, which is already in the header
 ;;     * smerge: Add toolbar for next/prev
-;; * Add utility function to clean up Emacs toolbars (Info, grep)
+;;
+;; Post 1.0 work:
+;;
+;; * Show keyboard shortcut on help text.
 ;;
 ;; * Add a bit more documentation.
 ;; * Add customization option: ignore-default-tool-bar-map
