@@ -117,6 +117,13 @@ This is for when you want more customizations than
 
   window-tool-bar-string--cache)
 
+(defconst window-tool-bar--separator
+  (let ((str (make-string 3 ?\s)))
+    (set-text-properties 0 1 '(display (space :width (4))) str)
+    (set-text-properties 1 2 '(display (space :width (1)) face cursor) str)
+    (set-text-properties 2 3 '(display (space :width (4))) str)
+    str))
+
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
 
@@ -126,7 +133,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
                               (pred (string-prefix-p "--")))))
-     "|")
+     window-tool-bar--separator)
 
     ;; Menu item, turn into propertized string button
     (`(,key menu-item ,name-expr ,binding . ,_)
@@ -146,8 +153,9 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
            (put-text-property 0 len
                               'display
                               (append spec
-                                      (if enabled '(:margin 2)
-                                        '(:margin 2 :conversion disabled)))
+                                      (if enabled '(:margin 2 :ascent center)
+                                        '(:margin 2 :ascent center
+                                          :conversion disabled)))
                               str))
          (put-text-property 0 len
                             'help-echo
