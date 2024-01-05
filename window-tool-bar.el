@@ -221,17 +221,17 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
       (setq tab-line-format '(:eval (window-tool-bar-string)))
     (setq tab-line-format nil)))
 
-(defun window-tool-bar--turn-on ()
-  "Internal function called by `global-window-tool-bar-mode'."
-  (when global-window-tool-bar-mode
-    (window-tool-bar-mode 1)))
-
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
   window-tool-bar-mode window-tool-bar--turn-on
   :group 'window-tool-bar
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
+
+(defun window-tool-bar--turn-on ()
+  "Internal function called by `global-window-tool-bar-mode'."
+  (when global-window-tool-bar-mode
+    (window-tool-bar-mode 1)))
 
 (provide 'window-tool-bar)
 
