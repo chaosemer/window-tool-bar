@@ -369,6 +369,34 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 (defvar window-tool-bar--allow-images t
   "Internal debug flag to force text mode.")
 
+;;; Display styling:
+(defface window-tool-bar-button
+  nil ; inherit tab-line-tab?
+  "Face used for buttons when the mouse is not hovering over the button."
+  :group 'window-tool-bar)
+
+(defface window-tool-bar-button-hover
+  nil ; inherit tab-line-highlight?
+  "Face used for buttons when the mouse is hovering over the button."
+  :group 'window-tool-bar)
+
+(defface window-tool-bar-button-disabled
+  nil ; inherit tty-menu-disabled-face?
+  "Face used for buttons when the button is disabled")
+
+(defface window-tool-bar-separator
+  nil
+  "Face used to style seperators.
+The string displayed is `window-tool-bar-separator-string'."
+  :group 'window-tool-bar)
+
+(defcustom window-tool-bar-separator-options
+  nil
+  "List of characters, one of which will be used to display menu separators.
+The first character that can be displayed will be used.
+Separators are styled with the face `window-tool-bar-separator'"
+  :group 'window-tool-bar)
+
 ;;; Workaround for Bug ###.
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
