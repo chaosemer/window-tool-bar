@@ -18,14 +18,14 @@ You may really like this package if any of the following is true:
 
 By putting a tool bar in each window, you can see multiple tool bars
 simultaneously directly next to the buffer the tool bar acts on.  This
-works especially well with in modes such as *info*, *help*, and
-*eww*.
+works especially well with in modes such as \*info\*, \*help\*, and
+\*eww\*.
 
 ## Installation
 
 The easiest way to install window-tool-bar-mode is on GNU Emacs 29 via
-`package-vc-install`. Just run `M-x package-vc-install RET
-http://github.com/chaosemer/window-tool-bar-mode RET`. This installs
+`package-vc-install`. Just run `M-x` `package-vc-install` `RET`
+`http://github.com/chaosemer/window-tool-bar-mode` `RET`. This installs
 the package locally.
 
 ## Customization
