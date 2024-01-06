@@ -366,7 +366,9 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
 (defun window-tool-bar--use-images ()
-  "Internal function.  Makes it easy to force text-only display."
+  "Internal function.
+Respects `window-tool-bar--allow-images' as well as frame
+capabilities."
   (and window-tool-bar--allow-images
        (display-images-p)))
 
@@ -386,7 +388,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
 (defface window-tool-bar-button-disabled
   nil ; inherit tty-menu-disabled-face?
-  "Face used for buttons when the button is disabled")
+  "Face used for buttons when the button is disabled.")
 
 (defface window-tool-bar-separator
   nil
