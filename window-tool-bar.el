@@ -45,6 +45,17 @@
 ;; header line, add (:eval (window-tool-bar-string)) to
 ;; `tab-line-format', `mode-line-format', or `header-line-format'.
 
+;;; Known issues:
+;;
+;; On GNU Emacs 29.1, terminals dragging to resize windows will error
+;; with message "<tab-line> <mouse-movement> is undefined".  This is a
+;; bug in GNU Emacs,
+;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=67457>.
+;;
+;; On GNU Emacs 29, performance in terminals is lower than on
+;; graphical frames.  This is due to a workaround, see "Workaround for
+;; Bug ###", below.
+
 ;;; Todo:
 ;;
 ;; Not all features planned are implemented yet.  Eventually I would
