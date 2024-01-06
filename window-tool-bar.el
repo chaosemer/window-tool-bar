@@ -244,7 +244,7 @@ This is for when you want more customizations than
 
   window-tool-bar-string--cache)
 
-(defconst window-tool-bar--separator
+(defconst window-tool-bar--graphical-separator
   (let ((str (make-string 3 ?\s)))
     (set-text-properties 0 1 '(display (space :width (4))) str)
     (set-text-properties 1 2 '(display (space :width (1)) face cursor) str)
@@ -260,7 +260,9 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
                               (pred (string-prefix-p "--")))))
-     window-tool-bar--separator)
+     (if (window-tool-bar--use-images)
+         window-tool-bar--graphical-separator
+       "|"))
 
     ;; Menu item, turn into propertized string button
     (`(,key menu-item ,name-expr ,binding . ,_)
