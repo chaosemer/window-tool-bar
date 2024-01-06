@@ -208,13 +208,15 @@ This is for when you want more customizations than
   (if (or (null window-tool-bar-string--cache)
           (window-tool-bar--last-command-triggers-refresh-p))
       (let* ((mem0 (memory-use-counts))
-             (toolbar-menu (cdr (keymap-global-lookup "<tool-bar>")))
+             (toolbar-menu (window-tool-bar--get-keymap))
              (mem1 (memory-use-counts))
              (result (mapconcat #'window-tool-bar--keymap-entry-to-string
-                                toolbar-menu
+                                (cdr toolbar-menu) ;Skip 'keymap
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
-                                (propertize " " 'invisible t)))
+                                (if (window-tool-bar--use-images)
+                                    (propertize " " 'invisible t)
+                                  " ")))
              (mem2 (memory-use-counts)))
         (cl-mapl (lambda (l-init l0 l1)
                    (cl-incf (car l-init) (- (car l1) (car l0))))
@@ -252,16 +254,21 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     (`(,key menu-item ,name-expr ,binding . ,_)
      (when binding      ; If no binding exists, then button is hidden.
        (let* ((name (eval name-expr))
-              (str (format "[%s]" (eval name-expr)))
+              (str (copy-sequence (eval name-expr)))
               (len (length str))
               (enable-form (plist-get menu-item :enable))
               (enabled (or (not enable-form)
                            (eval enable-form))))
-         (when enabled
-           (add-text-properties 0 len
-                                '(mouse-face tab-line-highlight
-                                  keymap window-tool-bar--button-keymap)
-                                str))
+         (if enabled
+             (add-text-properties 0 len
+                                  '(mouse-face tab-line-highlight
+                                    keymap window-tool-bar--button-keymap
+				    face tab-line)
+                                  str)
+           (put-text-property 0 len
+                              'face
+                              'tty-menu-disabled-face
+                              str))
          (when-let ((spec (plist-get menu-item :image)))
            (put-text-property 0 len
                               'display
@@ -287,7 +294,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
       (select-window (posn-window posn))
       (let* ((str (posn-string posn))
              (key (get-text-property (cdr str) 'tool-bar-key (car str)))
-             (cmd (lookup-key global-map (vector 'tool-bar key))))
+             (cmd (lookup-key (window-tool-bar--get-keymap) (vector key))))
         (call-interactively cmd)))))
 
 (defun window-tool-bar--ignore ()
@@ -342,6 +349,47 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   :group 'window-tool-bar
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
+
+(defun window-tool-bar--use-images ()
+  "Internal function.  Makes it easy to force text-only display."
+  (and window-tool-bar--allow-images
+       (display-images-p)))
+
+(defvar window-tool-bar--allow-images t
+  "Internal debug flag to force text mode.")
+
+;;; Workaround for Bug ###.
+(defun window-tool-bar--get-keymap ()
+  "Return the tool bar keymap."
+  (if (and (version< emacs-version "30")
+           (not (window-tool-bar--use-images)))
+      ;; This code path is a less efficient workaround.
+      (window-tool-bar--make-keymap-1)
+    (keymap-global-lookup "<tool-bar>")))
+
+(defun window-tool-bar--make-keymap-1 ()
+  "Patched copy of `tool-bar-make-keymap-1'."
+  (mapcar (lambda (bind)
+            (let (image-exp plist)
+              (when (and (eq (car-safe (cdr-safe bind)) 'menu-item)
+			 ;; For the format of menu-items, see node
+			 ;; `Extended Menu Items' in the Elisp manual.
+			 (setq plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+					     bind))
+			 (setq image-exp (plist-get plist :image))
+			 (consp image-exp)
+			 (not (eq (car image-exp) 'image))
+			 (fboundp (car image-exp)))
+		(let ((image (and (window-tool-bar--use-images)
+                                  (eval image-exp))))
+		  (unless (and image (image-mask-p image))
+		    (setq image (append image '(:mask heuristic))))
+		  (setq bind (copy-sequence bind)
+			plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+				      bind))
+		  (plist-put plist :image image)))
+	      bind))
+          tool-bar-map))
 
 (defun window-tool-bar--turn-on ()
   "Internal function called by `global-window-tool-bar-mode'."
