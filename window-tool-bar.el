@@ -176,7 +176,8 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
 
 (defgroup window-tool-bar nil
   "Tool bars per-window."
-  :group 'convenience)
+  :group 'convenience
+  :prefix "window-tool-bar-")
 
 (defvar-keymap window-tool-bar--button-keymap
   :doc "Keymap used by `window-tool-bar--keymap-entry-to-string'."
@@ -280,7 +281,8 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                               'face
                               'tty-menu-disabled-face
                               str))
-         (when-let ((spec (plist-get menu-item :image)))
+         (when-let ((spec (and (window-tool-bar--use-images)
+                               (plist-get menu-item :image))))
            (put-text-property 0 len
                               'display
                               (append spec
@@ -419,7 +421,7 @@ Separators are styled with the face `window-tool-bar-separator'"
 			 (consp image-exp)
 			 (not (eq (car image-exp) 'image))
 			 (fboundp (car image-exp)))
-		(let ((image (and (window-tool-bar--use-images)
+		(let ((image (and (display-images-p)
                                   (eval image-exp))))
 		  (unless (and image (image-mask-p image))
 		    (setq image (append image '(:mask heuristic))))
