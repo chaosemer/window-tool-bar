@@ -75,6 +75,7 @@
 
 (require 'mwheel)
 (require 'tab-line)
+(require 'tool-bar)
 
 ;;; Benchmarking code
 ;;
