@@ -54,7 +54,7 @@
 ;;
 ;; On GNU Emacs 29, performance in terminals is lower than on
 ;; graphical frames.  This is due to a workaround, see "Workaround for
-;; Bug ###", below.
+;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
 
 ;;; Todo:
 ;;
@@ -403,7 +403,7 @@ The first character that can be displayed will be used.
 Separators are styled with the face `window-tool-bar-separator'"
   :group 'window-tool-bar)
 
-;;; Workaround for Bug ###.
+;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
   (if (and (version< emacs-version "30")
