@@ -282,11 +282,13 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (interactive)
   (when (mouse-event-p last-command-event)
     (let ((posn (event-start last-command-event)))
-      (with-current-buffer (window-buffer (posn-window posn))
-        (let* ((str (posn-string posn))
-               (key (get-text-property (cdr str) 'tool-bar-key (car str)))
-               (cmd (lookup-key global-map (vector 'tool-bar key))))
-          (call-interactively cmd))))))
+      ;; Commands need to execute with the right buffer and window
+      ;; selected.  The selection needs to be permanent for isearch.
+      (select-window (posn-window posn))
+      (let* ((str (posn-string posn))
+             (key (get-text-property (cdr str) 'tool-bar-key (car str)))
+             (cmd (lookup-key global-map (vector 'tool-bar key))))
+        (call-interactively cmd)))))
 
 (defun window-tool-bar--ignore ()
   "Do nothing.  This command exists for isearch."
