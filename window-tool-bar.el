@@ -247,7 +247,10 @@ This is for when you want more customizations than
 (defconst window-tool-bar--graphical-separator
   (let ((str (make-string 3 ?\s)))
     (set-text-properties 0 1 '(display (space :width (4))) str)
-    (set-text-properties 1 2 '(display (space :width (1)) face cursor) str)
+    (set-text-properties 1 2
+                         '(display (space :width (1))
+                           face (:inverse-video t))
+                         str)
     (set-text-properties 2 3 '(display (space :width (4))) str)
     str))
 
@@ -275,13 +278,13 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                            (eval enable-form))))
          (if enabled
              (add-text-properties 0 len
-                                  '(mouse-face tab-line-highlight
+                                  '(mouse-face window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
-				    face tab-line)
+				    face window-tool-bar-button)
                                   str)
            (put-text-property 0 len
                               'face
-                              'tty-menu-disabled-face
+                              'window-tool-bar-button-disabled
                               str))
          (when-let ((spec (and (window-tool-bar--use-images)
                                (plist-get menu-item :image))))
@@ -377,30 +380,18 @@ capabilities."
 
 ;;; Display styling:
 (defface window-tool-bar-button
-  nil ; inherit tab-line-tab?
+  '((t :inherit tab-line)) ; inherit tab-line-tab?
   "Face used for buttons when the mouse is not hovering over the button."
   :group 'window-tool-bar)
 
 (defface window-tool-bar-button-hover
-  nil ; inherit tab-line-highlight?
+  '((t :inherit tab-line-highlight)) ; inherit tab-line-highlight?
   "Face used for buttons when the mouse is hovering over the button."
   :group 'window-tool-bar)
 
 (defface window-tool-bar-button-disabled
-  nil ; inherit tty-menu-disabled-face?
-  "Face used for buttons when the button is disabled.")
-
-(defface window-tool-bar-separator
-  nil
-  "Face used to style seperators.
-The string displayed is `window-tool-bar-separator-string'."
-  :group 'window-tool-bar)
-
-(defcustom window-tool-bar-separator-options
-  nil
-  "List of characters, one of which will be used to display menu separators.
-The first character that can be displayed will be used.
-Separators are styled with the face `window-tool-bar-separator'"
+  '((t :inherit tty-menu-disabled-face)) ; inherit tty-menu-disabled-face?
+  "Face used for buttons when the button is disabled."
   :group 'window-tool-bar)
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
