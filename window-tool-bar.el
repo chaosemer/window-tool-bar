@@ -61,9 +61,14 @@
 ;; Not all features planned are implemented yet.  Eventually I would
 ;; like to also generally make tool bars better.
 ;;
-;; Targeting 0.2:
-;;
-;; * Properly support button labels
+;; Targeting 0.3:
+;; * Properly support reamining less frequently used tool bar item specs.  From
+;;   `parse_tool_bar_item':
+;;     * :visible
+;;     * :filter
+;;     * :button
+;;     * :wrap
+;; * Add display customization similar to `tool-bar-style'.
 ;;
 ;; Targeting 1.0:
 ;;
@@ -276,12 +281,13 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
        "|"))
 
     ;; Menu item, turn into propertized string button
-    (`(,key menu-item ,name-expr ,binding . ,_)
+    (`(,key menu-item ,name-expr ,binding . ,plist)
      (when binding      ; If no binding exists, then button is hidden.
        (let* ((name (eval name-expr))
-              (str (copy-sequence (eval name-expr)))
+              (str (upcase-initials (or (plist-get plist :label)
+                                        (string-trim-right name "\\.+"))))
               (len (length str))
-              (enable-form (plist-get menu-item :enable))
+              (enable-form (plist-get plist :enable))
               (enabled (or (not enable-form)
                            (eval enable-form))))
          (if enabled
@@ -305,7 +311,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                               str))
          (put-text-property 0 len
                             'help-echo
-                            (or (plist-get menu-item :help) name)
+                            (or (plist-get plist :help) name)
                             str)
          (put-text-property 0 len 'tool-bar-key key str)
          str)))))
