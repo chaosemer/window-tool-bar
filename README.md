@@ -42,12 +42,3 @@ If you want to share the tool bar with an existing tab line, add
 add this to `mode-line-format` or `header-line-format`.  This is
 recommended if you already are using the tab line for other things,
 like displaying tabs.
-
-NOTE: Support on text-only displays (terminals) is currently
-experimental so you probably want to wrap any enable logic behind a
-test for image display:
-
-``` emacs-lisp
-(when (display-images-p)
-  (global-window-tool-bar-mode 1))
-```

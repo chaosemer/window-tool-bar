@@ -64,7 +64,6 @@
 ;; Targeting 0.2:
 ;;
 ;; * Properly support button labels
-;; * Make this work on non-graphical frames.
 ;;
 ;; Targeting 1.0:
 ;;
@@ -238,7 +237,16 @@ This is for when you want more customizations than
                  window-tool-bar--memory-use-delta-step2 mem1 mem2)
 
         (setf window-tool-bar-string--cache
-              result)
+              (concat
+               ;; The tool bar face by default puts boxes around the
+               ;; buttons.  However, this box is not displayed if the
+               ;; box starts at the leftmost pixel of the tab-line.
+               ;; Add a single space in this case so the box displays
+               ;; correctly.
+               (when (display-supports-face-attributes-p
+                      '(:box (line-width 1)))
+                 (propertize " " 'display '(space :width (1))))
+               result))
         (cl-incf window-tool-bar--refresh-done-count))
     (cl-incf window-tool-bar--refresh-skipped-count))
 
@@ -380,17 +388,40 @@ capabilities."
 
 ;;; Display styling:
 (defface window-tool-bar-button
-  '((t :inherit tab-line)) ; inherit tab-line-tab?
+  '((default
+     :inherit tab-line)
+    (((class color) (min-colors 88) (supports :box t))
+     :box (:line-width -1 :style released-button)
+     :background "grey85")
+    ;; If the box is not supported, dim the button background a bit.
+    (((class color) (min-colors 88))
+     :background "grey70")
+    (t
+     :inverse-video t))
   "Face used for buttons when the mouse is not hovering over the button."
   :group 'window-tool-bar)
 
 (defface window-tool-bar-button-hover
-  '((t :inherit tab-line-highlight)) ; inherit tab-line-highlight?
+  '((default
+     :inherit tab-line)
+    (((class color) (min-colors 88))
+     :box (:line-width -1 :style released-button)
+     :background "grey95")
+    (t
+     :inverse-video t))
   "Face used for buttons when the mouse is hovering over the button."
   :group 'window-tool-bar)
 
 (defface window-tool-bar-button-disabled
-  '((t :inherit tty-menu-disabled-face)) ; inherit tty-menu-disabled-face?
+  '((default
+     :inherit tab-line)
+    (((class color) (min-colors 88))
+     :box (:line-width -1 :style released-button)
+     :background "grey50"
+     :foreground "grey70")
+    (t
+     :inverse-video t
+     :background "brightblack"))
   "Face used for buttons when the button is disabled."
   :group 'window-tool-bar)
 
