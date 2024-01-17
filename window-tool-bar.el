@@ -434,6 +434,8 @@ capabilities."
       (window-tool-bar--make-keymap-1)
     (keymap-global-lookup "<tool-bar>")))
 
+(declare-function image-mask-p "image.c" (spec &optional frame))
+
 (defun window-tool-bar--make-keymap-1 ()
   "Patched copy of `tool-bar-make-keymap-1'."
   (mapcar (lambda (bind)
