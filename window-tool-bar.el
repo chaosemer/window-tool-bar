@@ -370,10 +370,18 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 (define-minor-mode window-tool-bar-mode
   "Toggle display of the tool bar in the tab line of the current buffer."
   :lighter nil
-  (if (and window-tool-bar-mode
-           (not (eq tool-bar-map (default-value 'tool-bar-map))))
-      (setq tab-line-format '(:eval (window-tool-bar-string)))
-    (setq tab-line-format nil)))
+  (let ((should-display (and window-tool-bar-mode
+                             (not (eq tool-bar-map
+                                      (default-value 'tool-bar-map))))))
+    (if (fboundp 'tab-line-set-display)
+        ;; Newly added function for Emacs 30.
+        (tab-line-set-display 'window-tool-bar-mode
+			      (and should-display
+				   '(:eval (window-tool-bar-string))))
+      ;; Legacy path for Emacs 29.
+      (setq tab-line-format
+            (and should-display
+                 '(:eval (window-tool-bar-string)))))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
