@@ -442,11 +442,12 @@ capabilities."
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
-  (if (and (version< emacs-version "30")
-           (not (window-tool-bar--use-images)))
-      ;; This code path is a less efficient workaround.
-      (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>")))
+  (let ((tool-bar-always-show-default nil))
+    (if (and (version< emacs-version "30")
+             (not (window-tool-bar--use-images)))
+        ;; This code path is a less efficient workaround.
+        (window-tool-bar--make-keymap-1)
+      (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
