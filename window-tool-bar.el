@@ -335,12 +335,15 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   nil)
 
 (defvar window-tool-bar--ignored-event-types
-  (list 'mouse-movement
-        mouse-wheel-up-event mouse-wheel-up-alternate-event
-        mouse-wheel-down-event mouse-wheel-down-alternate-event
-        mouse-wheel-left-event mouse-wheel-left-alternate-event
-        mouse-wheel-right-event mouse-wheel-right-alternate-event
-        'pinch)
+  (let ((list (list 'mouse-movement 'pinch
+                    'wheel-down 'wheel-up 'wheel-left 'wheel-right
+                    mouse-wheel-down-event mouse-wheel-up-event
+                    mouse-wheel-left-event mouse-wheel-right-event
+                    (bound-and-true-p mouse-wheel-down-alternate-event)
+                    (bound-and-true-p mouse-wheel-up-alternate-event)
+                    (bound-and-true-p mouse-wheel-left-alternate-event)
+                    (bound-and-true-p mouse-wheel-right-alternate-event))))
+    (delete-dups (delete nil list)))
   "Cache for `window-tool-bar--last-command-triggers-refresh-p'.")
 
 (defun window-tool-bar--last-command-triggers-refresh-p ()
