@@ -3,7 +3,7 @@
 ;; Copyright 2023 Jared Finder
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
-;; Version: 0.1
+;; Version: 0.2
 ;; Keywords: mouse
 ;; URL: http://github.com/chaosemer/window-tool-bar
 ;; Package-Requires: ((emacs "29.1"))
