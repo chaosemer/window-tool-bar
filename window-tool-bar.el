@@ -64,7 +64,6 @@
 ;; Targeting 0.3:
 ;; * Properly support reamining less frequently used tool bar item specs.  From
 ;;   `parse_tool_bar_item':
-;;     * :filter
 ;;     * :button
 ;; * Add display customization similar to `tool-bar-style'.
 ;;
@@ -285,7 +284,13 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
      (let* ((visible-entry (plist-member plist :visible))
             (visible (or (null visible-entry) ;Default is visible
                          (eval (cadr visible-entry))))
-            (wrap (plist-get plist :wrap)))
+            (wrap (plist-get plist :wrap))
+            (filter (plist-get plist :filter)))
+       (when filter
+         (setf binding
+               ;; You would expect this to use `funcall', but existing
+               ;; code in `parse_tool_bar_item' uses `eval'.
+               (eval `(,filter ',binding))))
        (when (and binding
                   visible
                   (null wrap))
