@@ -64,10 +64,8 @@
 ;; Targeting 0.3:
 ;; * Properly support reamining less frequently used tool bar item specs.  From
 ;;   `parse_tool_bar_item':
-;;     * :visible
 ;;     * :filter
 ;;     * :button
-;;     * :wrap
 ;; * Add display customization similar to `tool-bar-style'.
 ;;
 ;; Targeting 1.0:
@@ -282,39 +280,45 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
     ;; Menu item, turn into propertized string button
     (`(,key menu-item ,name-expr ,binding . ,plist)
-     (when binding      ; If no binding exists, then button is hidden.
-       (let* ((name (eval name-expr))
-              (str (upcase-initials (or (plist-get plist :label)
-                                        (string-trim-right name "\\.+"))))
-              (len (length str))
-              (enable-form (plist-get plist :enable))
-              (enabled (or (not enable-form)
-                           (eval enable-form))))
-         (if enabled
-             (add-text-properties 0 len
-                                  '(mouse-face window-tool-bar-button-hover
-                                    keymap window-tool-bar--button-keymap
-				    face window-tool-bar-button)
-                                  str)
+     (let* ((visible-entry (plist-member plist :visible))
+            (visible (or (null visible-entry) ;Default is visible
+                         (eval (cadr visible-entry))))
+            (wrap (plist-get plist :wrap)))
+       (when (and binding
+                  visible
+                  (null wrap))
+         (let* ((name (eval name-expr))
+                (str (upcase-initials (or (plist-get plist :label)
+                                          (string-trim-right name "\\.+"))))
+                (len (length str))
+                (enable-form (plist-get plist :enable))
+                (enabled (or (not enable-form)
+                             (eval enable-form))))
+           (if enabled
+               (add-text-properties 0 len
+                                    '(mouse-face window-tool-bar-button-hover
+                                                 keymap window-tool-bar--button-keymap
+				                 face window-tool-bar-button)
+                                    str)
+             (put-text-property 0 len
+                                'face
+                                'window-tool-bar-button-disabled
+                                str))
+           (when-let ((spec (and (window-tool-bar--use-images)
+                                 (plist-get menu-item :image))))
+             (put-text-property 0 len
+                                'display
+                                (append spec
+                                        (if enabled '(:margin 2 :ascent center)
+                                          '(:margin 2 :ascent center
+                                                    :conversion disabled)))
+                                str))
            (put-text-property 0 len
-                              'face
-                              'window-tool-bar-button-disabled
-                              str))
-         (when-let ((spec (and (window-tool-bar--use-images)
-                               (plist-get menu-item :image))))
-           (put-text-property 0 len
-                              'display
-                              (append spec
-                                      (if enabled '(:margin 2 :ascent center)
-                                        '(:margin 2 :ascent center
-                                          :conversion disabled)))
-                              str))
-         (put-text-property 0 len
-                            'help-echo
-                            (or (plist-get plist :help) name)
-                            str)
-         (put-text-property 0 len 'tool-bar-key key str)
-         str)))))
+                              'help-echo
+                              (or (plist-get plist :help) name)
+                              str)
+           (put-text-property 0 len 'tool-bar-key key str)
+           str))))))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
