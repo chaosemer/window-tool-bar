@@ -224,8 +224,10 @@ This is for when you want more customizations than
       (let* ((mem0 (memory-use-counts))
              (toolbar-menu (window-tool-bar--get-keymap))
              (mem1 (memory-use-counts))
-             (result (mapconcat #'window-tool-bar--keymap-entry-to-string
-                                (cdr toolbar-menu) ;Skip 'keymap
+             (strs (mapcar #'window-tool-bar--keymap-entry-to-string
+                           (cdr toolbar-menu))) ;Skip 'keymap
+             (result (mapconcat #'identity
+                                (delete nil strs)
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
                                 (if (window-tool-bar--use-images)
