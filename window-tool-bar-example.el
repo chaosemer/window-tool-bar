@@ -37,6 +37,8 @@
   (window-tool-bar-example--refresh))
 
 (defvar window-tool-bar-example--integer 5)
+(defvar window-tool-bar-example--boolean nil)
+(defvar window-tool-bar-example--symbol :lock)
 
 (defun window-tool-bar-example--refresh ()
   "Refresh the detailed description of the tool bar."
@@ -49,6 +51,10 @@
     (insert "Variables:\n"
             (format "* window-tool-bar-example--integer: %d\n"
                     window-tool-bar-example--integer)
+            (format "* window-tool-bar-example--boolean: %s\n"
+                    window-tool-bar-example--boolean)
+            (format "* window-tool-bar-example--symbol: %s\n"
+                    window-tool-bar-example--symbol)
             "\n")
 
     ;; Print the tool bar
@@ -102,6 +108,22 @@ EVENT and DEF are passed by `map-keymap'."
 (define-key-after window-tool-bar-example--tool-bar-map [separator-2]
   menu-bar-separator)
 
+;; :button (:toggle), :button (:radio)
+(tool-bar-local-item "describe" #'window-tool-bar-example--toogle-boolean 'toogle
+                     window-tool-bar-example--tool-bar-map
+                     :button '(:toggle . window-tool-bar-example--boolean))
+(tool-bar-local-item "lock" #'window-tool-bar-example--symbol-lock 'symbol-lock
+                     window-tool-bar-example--tool-bar-map
+                     :button '(:radio . (eq window-tool-bar-example--symbol :lock)))
+(tool-bar-local-item "lock-ok" #'window-tool-bar-example--symbol-lock-ok 'symbol-lock-ok
+                     window-tool-bar-example--tool-bar-map
+                     :button '(:radio . (eq window-tool-bar-example--symbol :lock-ok)))
+(tool-bar-local-item "lock-broken" #'window-tool-bar-example--symbol-lock-broken 'symbol-lock-broken
+                     window-tool-bar-example--tool-bar-map
+                     :button '(:radio . (eq window-tool-bar-example--symbol :lock-broken)))
+(define-key-after window-tool-bar-example--tool-bar-map [separator-3]
+  menu-bar-separator)
+
 ;; :filter
 (tool-bar-local-item "index" nil 'menu
                      window-tool-bar-example--tool-bar-map
@@ -144,6 +166,28 @@ EVENT and DEF are passed by `map-keymap'."
   "Binding for toolbar."
   (interactive)
   (setf window-tool-bar-example--integer 5)
+  (window-tool-bar-example--refresh))
+
+(defun window-tool-bar-example--toogle-boolean ()
+  "Binding for toolbar."
+  (interactive)
+  (setf window-tool-bar-example--boolean
+        (null window-tool-bar-example--boolean))
+  (window-tool-bar-example--refresh))
+(defun window-tool-bar-example--symbol-lock ()
+  "Binding for toolbar."
+  (interactive)
+  (setf window-tool-bar-example--symbol :lock)
+  (window-tool-bar-example--refresh))
+(defun window-tool-bar-example--symbol-lock-ok ()
+  "Binding for toolbar."
+  (interactive)
+  (setf window-tool-bar-example--symbol :lock-ok)
+  (window-tool-bar-example--refresh))
+(defun window-tool-bar-example--symbol-lock-broken ()
+  "Binding for toolbar."
+  (interactive)
+  (setf window-tool-bar-example--symbol :lock-broken)
   (window-tool-bar-example--refresh))
 
 (defun window-tool-bar-example--menu (orig-binding)
