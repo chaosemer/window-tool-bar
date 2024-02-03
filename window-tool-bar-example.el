@@ -63,15 +63,15 @@
                 tool-bar-map)
     (set-buffer-modified-p nil)
 
-    (goto-line old-line)
+    (goto-char (point-min))
+    (forward-line (1- old-line))
     (move-to-column old-column)))
 
 (defun window-tool-bar-example--insert-single-entry (event def)
   "Insert into the current buffer details for a single toolbar entry.
 EVENT and DEF are passed by `map-keymap'."
   (when (eq (car def)  'menu-item)
-    (let* ((plist (nthcdr 3 def))
-           (keys (map-keys plist)))
+    (let ((plist (nthcdr 3 def)))
       (insert (format "* %S -- Properties:\n" event))
       (map-apply (lambda (key value)
                    (unless (eq key :image)
@@ -190,14 +190,18 @@ EVENT and DEF are passed by `map-keymap'."
   (setf window-tool-bar-example--symbol :lock-broken)
   (window-tool-bar-example--refresh))
 
-(defun window-tool-bar-example--menu (orig-binding)
-  "Binding for toolbar.
-ORIG-BINDING is from :filter."
+(defun window-tool-bar-example--menu (_orig-binding)
+  "Binding for toolbar."
   ;; :filter is most useful for keymaps, but tool bars do not support
   ;; buttons being bound to keymaps.
  (lambda ()
    (interactive)
    (x-popup-menu t (keymap-global-lookup "<menu-bar>"))))
+
+(defun window-tool-bar-example--prefs ()
+  "Binding for toolbar."
+  (interactive)
+  (error "This should not be called"))
 
 (provide 'window-tool-bar-example)
 
