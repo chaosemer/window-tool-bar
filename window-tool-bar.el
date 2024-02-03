@@ -62,9 +62,6 @@
 ;; like to also generally make tool bars better.
 ;;
 ;; Targeting 0.3:
-;; * Properly support reamining less frequently used tool bar item specs.  From
-;;   `parse_tool_bar_item':
-;;     * :button
 ;; * Add display customization similar to `tool-bar-style'.
 ;;
 ;; Targeting 1.0:
@@ -300,17 +297,27 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                 (len (length str))
                 (enable-form (plist-get plist :enable))
                 (enabled (or (not enable-form)
-                             (eval enable-form))))
-           (if enabled
-               (add-text-properties 0 len
-                                    '(mouse-face window-tool-bar-button-hover
-                                                 keymap window-tool-bar--button-keymap
-				                 face window-tool-bar-button)
-                                    str)
+                             (eval enable-form)))
+                (button-spec (plist-get plist :button))
+                (button-selected (eval (cdr-safe button-spec))))
+           (cond
+            ((and enabled button-selected)
+             (add-text-properties 0 len
+                                  '(mouse-face window-tool-bar-button-checked-hover
+                                    keymap window-tool-bar--button-keymap
+				    face window-tool-bar-button-checked)
+                                  str))
+            (enabled
+             (add-text-properties 0 len
+                                  '(mouse-face window-tool-bar-button-hover
+                                    keymap window-tool-bar--button-keymap
+				    face window-tool-bar-button)
+                                  str))
+            (t
              (put-text-property 0 len
                                 'face
                                 'window-tool-bar-button-disabled
-                                str))
+                                str)))
            (when-let ((spec (and (window-tool-bar--use-images)
                                  (plist-get menu-item :image))))
              (put-text-property 0 len
@@ -408,7 +415,7 @@ capabilities."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88) (supports :box t))
-     :box (:line-width -1 :style released-button)
+     :box (:line-width (-1 . -1) :style released-button)
      :background "grey85")
     ;; If the box is not supported, dim the button background a bit.
     (((class color) (min-colors 88))
@@ -422,7 +429,7 @@ capabilities."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88))
-     :box (:line-width -1 :style released-button)
+     :box (:line-width (-1 . -1) :style released-button)
      :background "grey95")
     (t
      :inverse-video t))
@@ -433,13 +440,41 @@ capabilities."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88))
-     :box (:line-width -1 :style released-button)
+     :box (:line-width (-1 . -1) :style released-button)
      :background "grey50"
      :foreground "grey70")
     (t
      :inverse-video t
      :background "brightblack"))
   "Face used for buttons when the button is disabled."
+  :group 'window-tool-bar)
+
+(defface window-tool-bar-button-checked
+  '((default
+     :inherit tab-line)
+    (((supports :box t))
+     :box (:line-width (-1 . -1) :style pressed-button)
+     :background "grey85")
+    (((class color))
+     :background "blue"
+     :foreground "white")
+    (t
+     :inverse-video t))
+  "Face used for buttons when they are toggled."
+  :group 'window-tool-bar)
+
+(defface window-tool-bar-button-checked-hover
+  '((default
+     :inherit tab-line)
+    (((class color) (min-colors 88) (supports :box t))
+     :box (:line-width (-1 . -1) :style pressed-button)
+     :background "grey95")
+    (((class color))
+     :background "brightblue"
+     :foreground "white")
+    (t
+     :inverse-video t))
+  "Face used for buttons when the mouse is hovering over the button."
   :group 'window-tool-bar)
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
