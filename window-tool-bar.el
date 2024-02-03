@@ -3,7 +3,7 @@
 ;; Copyright 2023 Jared Finder
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
-;; Version: 0.2
+;; Version: 0.3
 ;; Keywords: mouse
 ;; URL: http://github.com/chaosemer/window-tool-bar
 ;; Package-Requires: ((emacs "29.1"))
@@ -60,9 +60,6 @@
 ;;
 ;; Not all features planned are implemented yet.  Eventually I would
 ;; like to also generally make tool bars better.
-;;
-;; Targeting 0.3:
-;; * Add display customization similar to `tool-bar-style'.
 ;;
 ;; Targeting 1.0:
 ;;
@@ -397,6 +394,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 (define-globalized-minor-mode global-window-tool-bar-mode
   window-tool-bar-mode window-tool-bar--turn-on
   :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.1")
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
@@ -423,7 +421,8 @@ capabilities."
     (t
      :inverse-video t))
   "Face used for buttons when the mouse is not hovering over the button."
-  :group 'window-tool-bar)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.2"))
 
 (defface window-tool-bar-button-hover
   '((default
@@ -434,7 +433,8 @@ capabilities."
     (t
      :inverse-video t))
   "Face used for buttons when the mouse is hovering over the button."
-  :group 'window-tool-bar)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.2"))
 
 (defface window-tool-bar-button-disabled
   '((default
@@ -447,7 +447,8 @@ capabilities."
      :inverse-video t
      :background "brightblack"))
   "Face used for buttons when the button is disabled."
-  :group 'window-tool-bar)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.2"))
 
 (defface window-tool-bar-button-checked
   '((default
@@ -461,7 +462,8 @@ capabilities."
     (t
      :inverse-video t))
   "Face used for buttons when they are toggled."
-  :group 'window-tool-bar)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3"))
 
 (defface window-tool-bar-button-checked-hover
   '((default
@@ -475,7 +477,8 @@ capabilities."
     (t
      :inverse-video t))
   "Face used for buttons when the mouse is hovering over the button."
-  :group 'window-tool-bar)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3"))
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
 (defun window-tool-bar--get-keymap ()
