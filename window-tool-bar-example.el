@@ -124,10 +124,11 @@ EVENT and DEF are passed by `map-keymap'."
 (define-key-after window-tool-bar-example--tool-bar-map [separator-3]
   menu-bar-separator)
 
-;; :filter
+;; :filter, :vert-only
 (tool-bar-local-item "index" nil 'menu
                      window-tool-bar-example--tool-bar-map
-                     :filter #'window-tool-bar-example--menu)
+                     :filter #'window-tool-bar-example--menu
+                     :vert-only t)
 
 ;; :wrap
 (tool-bar-local-item "preferences" #'window-tool-bar-example--prefs 'prefs

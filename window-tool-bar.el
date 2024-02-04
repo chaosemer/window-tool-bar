@@ -223,9 +223,8 @@ This is for when you want more customizations than
                                 (delete nil strs)
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
-                                (if (window-tool-bar--use-images)
-                                    (propertize " " 'invisible t)
-                                  " ")))
+                                (if (eq 'text (window-tool-bar--style)) " "
+                                  (propertize " " 'invisible t))))
              (mem2 (memory-use-counts)))
         (cl-mapl (lambda (l-init l0 l1)
                    (cl-incf (car l-init) (- (car l1) (car l0))))
@@ -269,9 +268,8 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
                               (pred (string-prefix-p "--")))))
-     (if (window-tool-bar--use-images)
-         window-tool-bar--graphical-separator
-       "|"))
+     (if (eq 'text (window-tool-bar--style)) "|"
+       window-tool-bar--graphical-separator))
 
     ;; Menu item, turn into propertized string button
     (`(,key menu-item ,name-expr ,binding . ,plist)
@@ -296,7 +294,36 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                 (enabled (or (not enable-form)
                              (eval enable-form)))
                 (button-spec (plist-get plist :button))
-                (button-selected (eval (cdr-safe button-spec))))
+                (button-selected (eval (cdr-safe button-spec)))
+                (vert-only (plist-get plist :vert-only))
+                image-start
+                image-end)
+           ;; Depending on style, Images can be displayed to the
+           ;; left, to the right, or in place of the text
+           (pcase (window-tool-bar--style)
+             ('image
+              (setf image-start 0
+                    image-end len))
+             ('text
+              ;; Images shouldn't be available
+              )
+             ((or 'both 'both-horiz)
+              (if vert-only
+                  (setf image-start 0 image-end len)
+                (setf str (concat " " str)
+                      image-start 0
+                      image-end 1
+                      len (1+ len))))
+             ('text-image-horiz
+              (if vert-only
+                  (setf image-start 0 image-end len)
+                (setf str (concat str " ")
+                      image-start len
+                      image-end (1+ len)
+                      len (1+ len))))
+             (_
+              (error "Unexpected value from window-tool-bar--style")))
+
            (cond
             ((and enabled button-selected)
              (add-text-properties 0 len
@@ -315,9 +342,9 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                                 'face
                                 'window-tool-bar-button-disabled
                                 str)))
-           (when-let ((spec (and (window-tool-bar--use-images)
+           (when-let ((spec (and image-start image-end
                                  (plist-get menu-item :image))))
-             (put-text-property 0 len
+             (put-text-property image-start image-end
                                 'display
                                 (append spec
                                         (if enabled '(:margin 2 :ascent center)
@@ -398,17 +425,43 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
-(defun window-tool-bar--use-images ()
-  "Internal function.
-Respects `window-tool-bar--allow-images' as well as frame
-capabilities."
-  (and window-tool-bar--allow-images
-       (display-images-p)))
+(defun window-tool-bar--style ()
+  "Return the effective style based on `window-tool-bar-style'.
 
-(defvar window-tool-bar--allow-images t
-  "Internal debug flag to force text mode.")
+This also takes into account frame capabilities.  If the current
+frame can not display images (see `dislay-images-p'), then this
+will always return text."
+  (if (not (display-images-p))
+      'text
+    (let ((style window-tool-bar-style))
+      (when (eq style 'tool-bar-style)
+        (setf style tool-bar-style))
+      (unless (memq style '(image text both both-horiz text-image-horiz))
+        (setf style (if (fboundp 'tool-bar-get-system-style)
+                        (tool-bar-get-system-style)
+                      'image)))
+      style)))
 
 ;;; Display styling:
+(defcustom window-tool-bar-style 'image
+  "Tool bar style to use for window tool bars.
+The meanining is the same as for `tool-bar-style', which see.  If
+set to the symbol `tool-bar-style', then use the value of
+`tool-bar-style' instead.
+
+When images can not be displayed (see `display-images-p'), text
+is used."
+  :type '(choice (const :tag "Images" :value image)
+                 (const :tag "Text" :value text)
+		 ;; This option would require multiple tool bar lines.
+                 ;;(const :tag "Both" :value both)
+		 (const :tag "Both-horiz" :value both-horiz)
+		 (const :tag "Text-image-horiz" :value text-image-horiz)
+                 (const :tag "Inherit tool-bar-style" :value tool-bar-style)
+		 (const :tag "System default" :value nil))
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3"))
+
 (defface window-tool-bar-button
   '((default
      :inherit tab-line)
@@ -484,7 +537,7 @@ capabilities."
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
   (if (and (version< emacs-version "30")
-           (not (window-tool-bar--use-images)))
+           (eq 'text (window-tool-bar--style)))
       ;; This code path is a less efficient workaround.
       (window-tool-bar--make-keymap-1)
     (keymap-global-lookup "<tool-bar>")))
