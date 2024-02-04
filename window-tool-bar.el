@@ -327,15 +327,16 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
            (cond
             ((and enabled button-selected)
              (add-text-properties 0 len
-                                  '(mouse-face window-tool-bar-button-checked-hover
+                                  '(mouse-face
+                                    window-tool-bar-button-checked-hover
                                     keymap window-tool-bar--button-keymap
-				    face window-tool-bar-button-checked)
+                                    face window-tool-bar-button-checked)
                                   str))
             (enabled
              (add-text-properties 0 len
                                   '(mouse-face window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
-				    face window-tool-bar-button)
+                                    face window-tool-bar-button)
                                   str))
             (t
              (put-text-property 0 len
@@ -453,12 +454,12 @@ When images can not be displayed (see `display-images-p'), text
 is used."
   :type '(choice (const :tag "Images" :value image)
                  (const :tag "Text" :value text)
-		 ;; This option would require multiple tool bar lines.
+                 ;; This option would require multiple tool bar lines.
                  ;;(const :tag "Both" :value both)
-		 (const :tag "Both-horiz" :value both-horiz)
-		 (const :tag "Text-image-horiz" :value text-image-horiz)
+                 (const :tag "Both-horiz" :value both-horiz)
+                 (const :tag "Text-image-horiz" :value text-image-horiz)
                  (const :tag "Inherit tool-bar-style" :value tool-bar-style)
-		 (const :tag "System default" :value nil))
+                 (const :tag "System default" :value nil))
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
