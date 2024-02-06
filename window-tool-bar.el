@@ -71,8 +71,6 @@
 ;;
 ;; Post 1.0 work:
 ;;
-;; * Show keyboard shortcut on help text.
-;;
 ;; * Add a bit more documentation.
 ;; * Add customization option: ignore-default-tool-bar-map
 ;; * Make tab-line dragging resize the window
@@ -352,10 +350,17 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
                                           '(:margin 2 :ascent center
                                                     :conversion disabled)))
                                 str))
-           (put-text-property 0 len
-                              'help-echo
-                              (or (plist-get plist :help) name)
-                              str)
+           (let ((help-text (or (plist-get plist :help) name))
+                 (keys (where-is-internal binding nil t)))
+             (put-text-property 0 len
+                                'help-echo
+                                (if keys
+                                    (concat help-text
+                                            "  ("
+                                            (key-description keys)
+                                            ")")
+                                  help-text)
+                                str))
            (put-text-property 0 len 'tool-bar-key key str)
            str))))))
 
