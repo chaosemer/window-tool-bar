@@ -6,7 +6,7 @@
 ;; Version: 0.3
 ;; Keywords: mouse
 ;; URL: http://github.com/chaosemer/window-tool-bar
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "27.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -47,14 +47,14 @@
 
 ;;; Known issues:
 ;;
-;; On GNU Emacs 29.1, terminals dragging to resize windows will error
-;; with message "<tab-line> <mouse-movement> is undefined".  This is a
-;; bug in GNU Emacs,
+;; On GNU Emacs 29.1 and earlier, terminals dragging to resize windows
+;; will error with message "<tab-line> <mouse-movement> is undefined".
+;; This is a bug in GNU Emacs,
 ;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=67457>.
 ;;
-;; On GNU Emacs 29, performance in terminals is lower than on
-;; graphical frames.  This is due to a workaround, see "Workaround for
-;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
+;; On GNU Emacs 29 and earlier, performance in terminals is lower than
+;; on graphical frames.  This is due to a workaround, see "Workaround
+;; for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
 ;;
 ;; Dragging empty space on the tab-line (which this package uses to
 ;; display the window tool bar) doesn't resize windows.  This is
@@ -171,26 +171,28 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
   :group 'convenience
   :prefix "window-tool-bar-")
 
-(defvar-keymap window-tool-bar--button-keymap
-  :doc "Keymap used by `window-tool-bar--keymap-entry-to-string'."
-  "<follow-link>" 'mouse-face
-  ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
-  ;; bar is not a place the point can travel to.
-  "<tab-line> <mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <mouse-2>" #'window-tool-bar--call-button
-  "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
-  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
+(defvar window-tool-bar--button-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<follow-link>") 'mouse-face)
+    ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
+    ;; bar is not a place the point can travel to.
+    (define-key map (kbd "<tab-line> <mouse-1>") #'window-tool-bar--call-button)
+    (define-key map (kbd "<tab-line> <double-mouse-1>") #'window-tool-bar--call-button)
+    (define-key map (kbd "<tab-line> <triple-mouse-1>") #'window-tool-bar--call-button)
+    (define-key map (kbd "<tab-line> <mouse-2>") #'window-tool-bar--call-button)
+    (define-key map (kbd "<tab-line> <double-mouse-2>") #'window-tool-bar--call-button)
+    (define-key map (kbd "<tab-line> <triple-mouse-2>") #'window-tool-bar--call-button)
 
-  ;; Mouse down events do nothing.  A binding is needed so isearch
-  ;; does not exit when the tab bar is clicked.
-  "<tab-line> <down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <double-down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+    ;; Mouse down events do nothing.  A binding is needed so isearch
+    ;; does not exit when the tab bar is clicked.
+    (define-key map (kbd "<tab-line> <down-mouse-1>") #'window-tool-bar--ignore)
+    (define-key map (kbd "<tab-line> <double-down-mouse-1>") #'window-tool-bar--ignore)
+    (define-key map (kbd "<tab-line> <triple-down-mouse-1>") #'window-tool-bar--ignore)
+    (define-key map (kbd "<tab-line> <down-mouse-2>") #'window-tool-bar--ignore)
+    (define-key map (kbd "<tab-line> <double-down-mouse-2>") #'window-tool-bar--ignore)
+    (define-key map (kbd "<tab-line> <triple-down-mouse-2>") #'window-tool-bar--ignore)
+    map)
+  "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 ;; Register bindings that stay in isearch.  Technically, these
@@ -206,7 +208,7 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
 (defun window-tool-bar-string ()
   "Return a (propertized) string for the tool bar.
 
-This is for when you want more customizations than
+This is for when you want more customizations than the command
 `window-tool-bar-mode' provides.  Commonly added to the variable
 `tab-line-format', `header-line-format', or `mode-line-format'"
   (if (or (null window-tool-bar-string--cache)
@@ -383,10 +385,12 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
 (defvar window-tool-bar--ignored-event-types
   (list 'mouse-movement
-        mouse-wheel-up-event mouse-wheel-up-alternate-event
-        mouse-wheel-down-event mouse-wheel-down-alternate-event
-        mouse-wheel-left-event mouse-wheel-left-alternate-event
-        mouse-wheel-right-event mouse-wheel-right-alternate-event
+        mouse-wheel-down-event mouse-wheel-up-event
+        mouse-wheel-left-event mouse-wheel-right-event
+        (bound-and-true-p mouse-wheel-down-alternate-event)
+        (bound-and-true-p mouse-wheel-up-alternate-event)
+        (bound-and-true-p mouse-wheel-left-alternate-event)
+        (bound-and-true-p mouse-wheel-right-alternate-event)
         'pinch)
   "Cache for `window-tool-bar--last-command-triggers-refresh-p'.")
 
@@ -428,7 +432,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
 (defun window-tool-bar--turn-on ()
-  "Internal function called by `global-window-tool-bar-mode'."
+  "Internal function called by the command `global-window-tool-bar-mode'."
   (when global-window-tool-bar-mode
     (window-tool-bar-mode 1)))
 
@@ -481,7 +485,7 @@ is used."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88) (supports :box t))
-     :box (:line-width (-1 . -1) :style released-button)
+     :box (:line-width -1 :style released-button)
      :background "grey85")
     ;; If the box is not supported, dim the button background a bit.
     (((class color) (min-colors 88))
@@ -496,7 +500,7 @@ is used."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88))
-     :box (:line-width (-1 . -1) :style released-button)
+     :box (:line-width -1 :style released-button)
      :background "grey95")
     (t
      :inverse-video t))
@@ -508,7 +512,7 @@ is used."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88))
-     :box (:line-width (-1 . -1) :style released-button)
+     :box (:line-width -1 :style released-button)
      :background "grey50"
      :foreground "grey70")
     (t
@@ -522,7 +526,7 @@ is used."
   '((default
      :inherit tab-line)
     (((supports :box t))
-     :box (:line-width (-1 . -1) :style pressed-button)
+     :box (:line-width -1 :style pressed-button)
      :background "grey85")
     (((class color))
      :background "blue"
@@ -537,7 +541,7 @@ is used."
   '((default
      :inherit tab-line)
     (((class color) (min-colors 88) (supports :box t))
-     :box (:line-width (-1 . -1) :style pressed-button)
+     :box (:line-width -1 :style pressed-button)
      :background "grey95")
     (((class color))
      :background "brightblue"
@@ -576,7 +580,7 @@ If nil, the default tool bar is not shown."
            (eq 'text (window-tool-bar--style)))
       ;; This code path is a less efficient workaround.
       (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>")))
+    (global-key-binding (kbd "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
