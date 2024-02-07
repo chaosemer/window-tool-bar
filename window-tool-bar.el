@@ -72,7 +72,6 @@
 ;; Post 1.0 work:
 ;;
 ;; * Add a bit more documentation.
-;; * Add customization option: ignore-default-tool-bar-map
 ;; * Make tab-line dragging resize the window
 
 ;;; Code:
@@ -418,10 +417,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 (define-minor-mode window-tool-bar-mode
   "Toggle display of the tool bar in the tab line of the current buffer."
   :lighter nil
-  (if (and window-tool-bar-mode
-           (not (eq tool-bar-map (default-value 'tool-bar-map))))
-      (setq tab-line-format '(:eval (window-tool-bar-string)))
-    (setq tab-line-format nil)))
+  (window-tool-bar--force-update))
 
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
@@ -435,6 +431,14 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   "Internal function called by `global-window-tool-bar-mode'."
   (when global-window-tool-bar-mode
     (window-tool-bar-mode 1)))
+
+(defun window-tool-bar--force-update ()
+  "Forcibly refresh the tool bar state."
+  (if (and window-tool-bar-mode
+           (or window-tool-bar-show-default
+               (not (eq tool-bar-map (default-value 'tool-bar-map)))))
+      (setq tab-line-format '(:eval (window-tool-bar-string)))
+    (setq tab-line-format nil)))
 
 (defun window-tool-bar--style ()
   "Return the effective style based on `window-tool-bar-style'.
@@ -543,6 +547,27 @@ is used."
   "Face used for buttons when the mouse is hovering over the button."
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
+
+(defun window-tool-bar--set-and-refresh (symbol value)
+  "Internal function to be called by changing customize options.
+
+SYMBOL and VALUE have the same meaning as for
+`set-default-toplevel-value'."
+  (set-default-toplevel-value symbol value)
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (when window-tool-bar-mode
+        (window-tool-bar--force-update)))))
+
+(defcustom window-tool-bar-show-default nil
+  "If the default tool bar is shown or not.
+
+If non-nil, the default tool bar is shown.
+If nil, the default tool bar is not shown."
+  :type 'boolean
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3")
+  :set #'window-tool-bar--set-and-refresh)
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
 (defun window-tool-bar--get-keymap ()
