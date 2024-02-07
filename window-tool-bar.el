@@ -431,6 +431,11 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
+(defun window-tool-bar--turn-on ()
+  "Internal function called by `global-window-tool-bar-mode'."
+  (when global-window-tool-bar-mode
+    (window-tool-bar-mode 1)))
+
 (defun window-tool-bar--style ()
   "Return the effective style based on `window-tool-bar-style'.
 
@@ -573,12 +578,7 @@ is used."
 		  (plist-put plist :image image)))
 	      bind))
           tool-bar-map))
-
-(defun window-tool-bar--turn-on ()
-  "Internal function called by `global-window-tool-bar-mode'."
-  (when global-window-tool-bar-mode
-    (window-tool-bar-mode 1)))
-
+
 (provide 'window-tool-bar)
 
 ;;; window-tool-bar.el ends here
