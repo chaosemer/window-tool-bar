@@ -55,24 +55,24 @@
 ;; On GNU Emacs 29, performance in terminals is lower than on
 ;; graphical frames.  This is due to a workaround, see "Workaround for
 ;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
+;;
+;; Dragging empty space on the tab-line (which this package uses to
+;; display the window tool bar) doesn't resize windows.  This is
+;; unlike the mode line, where dragging empty space resizes the
+;; window.
 
 ;;; Todo:
 ;;
 ;; Not all features planned are implemented yet.  Eventually I would
 ;; like to also generally make tool bars better.
 ;;
-;; Targeting 1.0:
+;; Post 1.0 work:
 ;;
 ;; * Clean up Emacs tool bars
 ;;     * Default: Remove default tool-bar entirely
 ;;     * grep, vc: Remove default tool-bar inherited
 ;;     * info: Remove Next / Prev / Up, which is already in the header
 ;;     * smerge: Add tool bar for next/prev
-;;
-;; Post 1.0 work:
-;;
-;; * Add a bit more documentation.
-;; * Make tab-line dragging resize the window
 
 ;;; Code:
 
