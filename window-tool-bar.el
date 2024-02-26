@@ -1,11 +1,11 @@
 ;;; window-tool-bar.el --- Add tool bars inside windows -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2023-2024 Free Software Foundation, Inc.
+
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
 ;; Version: 0.2
 ;; Keywords: mouse
-;; URL: http://github.com/chaosemer/window-tool-bar
 ;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is part of GNU Emacs.
@@ -130,13 +130,13 @@ The total number of requests is the sum of this and
 
 (defun window-tool-bar--memory-use-avg-step2 ()
   "Return average memory use delta during step 2."
-  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+  (mapcar (lambda (elt) (/ (float elt) window-tool-bar--refresh-done-count))
           window-tool-bar--memory-use-delta-step2))
 
 (declare-function time-stamp-string "time-stamp")
 
-(defun window-tool-bar-show-memory-use ()
-  "Pop up a window showing the memory use metrics."
+(defun window-tool-bar-debug-show-memory-use ()
+  "Development-only command to show memory used by `window-tool-bar-string'."
   (interactive)
   (require 'time-stamp)
   (save-selected-window
@@ -170,13 +170,14 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
   `memory-use-counts'."
   (let* ((label-len (length label))
          (padding (make-string label-len ?\s)))
-    (insert (format "%s  %8.2f Conses\n" label (elt avg-memory-use 0)))
-    (insert (format "%s  %8.2f Floats\n" padding (elt avg-memory-use 1)))
-    (insert (format "%s  %8.2f Vector cells\n" padding (elt avg-memory-use 2)))
-    (insert (format "%s  %8.2f Symbols\n" padding (elt avg-memory-use 3)))
-    (insert (format "%s  %8.2f String chars\n" padding (elt avg-memory-use 4)))
-    (insert (format "%s  %8.2f Intervals\n" padding (elt avg-memory-use 5)))
-    (insert (format "%s  %8.2f Strings\n" padding (elt avg-memory-use 6)))))
+    (cl-loop for usage in avg-memory-use
+             for usage-label in '("Conses" "Floats" "Vector cells" "Symbols"
+                                  "String chars" "Intervals" "Strings")
+             for idx from 0
+             do (insert (format "%s  %8.2f %s\n"
+                                (if (= idx 0) label padding)
+                                usage
+                                usage-label)))))
 
 (defgroup window-tool-bar nil
   "Tool bars per-window."
@@ -294,7 +295,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
              (add-text-properties 0 len
                                   '(mouse-face window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
-				    face window-tool-bar-button)
+                                    face window-tool-bar-button)
                                   str)
            (put-text-property 0 len
                               'face
@@ -379,8 +380,8 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
     (if (fboundp 'tab-line-set-display)
         ;; Newly added function for Emacs 30.
         (tab-line-set-display 'window-tool-bar-mode
-			      (and should-display
-				   '(:eval (window-tool-bar-string))))
+                              (and should-display
+                                   '(:eval (window-tool-bar-string))))
       ;; Legacy path for Emacs 29.
       (setq tab-line-format
             (and should-display
@@ -459,23 +460,23 @@ capabilities."
   (mapcar (lambda (bind)
             (let (image-exp plist)
               (when (and (eq (car-safe (cdr-safe bind)) 'menu-item)
-			 ;; For the format of menu-items, see node
-			 ;; `Extended Menu Items' in the Elisp manual.
-			 (setq plist (nthcdr (if (consp (nth 4 bind)) 5 4)
-					     bind))
-			 (setq image-exp (plist-get plist :image))
-			 (consp image-exp)
-			 (not (eq (car image-exp) 'image))
-			 (fboundp (car image-exp)))
-		(let ((image (and (display-images-p)
+                         ;; For the format of menu-items, see node
+                         ;; `Extended Menu Items' in the Elisp manual.
+                         (setq plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+                                             bind))
+                         (setq image-exp (plist-get plist :image))
+                         (consp image-exp)
+                         (not (eq (car image-exp) 'image))
+                         (fboundp (car image-exp)))
+                (let ((image (and (display-images-p)
                                   (eval image-exp))))
-		  (unless (and image (image-mask-p image))
-		    (setq image (append image '(:mask heuristic))))
-		  (setq bind (copy-sequence bind)
-			plist (nthcdr (if (consp (nth 4 bind)) 5 4)
-				      bind))
-		  (plist-put plist :image image)))
-	      bind))
+                  (unless (and image (image-mask-p image))
+                    (setq image (append image '(:mask heuristic))))
+                  (setq bind (copy-sequence bind)
+                        plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+                                      bind))
+                  (plist-put plist :image image)))
+              bind))
           tool-bar-map))
 
 (defun window-tool-bar--turn-on ()
