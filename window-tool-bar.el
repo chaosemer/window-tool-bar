@@ -393,15 +393,15 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
   (add-hook 'isearch-mode-hook #'window-tool-bar--turn-on)
   (add-hook 'isearch-mode-end-hook #'window-tool-bar--turn-on))
 
+(defvar window-tool-bar--allow-images t
+  "Internal debug flag to force text mode.")
+
 (defun window-tool-bar--use-images ()
   "Internal function.
 Respects `window-tool-bar--allow-images' as well as frame
 capabilities."
   (and window-tool-bar--allow-images
        (display-images-p)))
-
-(defvar window-tool-bar--allow-images t
-  "Internal debug flag to force text mode.")
 
 ;;; Display styling:
 (defface window-tool-bar-button
