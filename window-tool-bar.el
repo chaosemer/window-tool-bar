@@ -301,6 +301,18 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (vert-only (plist-get plist :vert-only))
                 image-start
                 image-end)
+
+           ;; Pretend to support icons on text terminals based on
+           ;; string replacement.
+           ;; 
+           ;; FIXME: This would be better done if it actually used the
+           ;; image spec.
+           (when-let ((replace (and window-tool-bar-show-unicode-images
+                                    (assoc-string
+                                     str window-tool-bar-unicode-image-map))))
+             (setf str (nth 1 replace)
+                   len (length str)))
+
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
            (pcase-exhaustive (window-tool-bar--style)
@@ -506,6 +518,35 @@ will always return text."
                         (tool-bar-get-system-style)
                       'image)))
       style)))
+
+(defcustom window-tool-bar-show-unicode-images t
+  "If non-nil, use Unicode symbols for images.
+
+This only has an effect on non-graphical displays, like when you
+start Emacs with \"emacs -nw\"."
+  :type 'boolean
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3"))
+
+(defvar window-tool-bar-unicode-image-map
+  (copy-tree '(;; help-mode
+               ("Previous Topic" "←")   ; left-arrow
+               ("Next Topic" "→")       ; right-arrow
+               ("Search" "🔍")          ; search
+               ("Quit" "🗙")             ; close
+               ;; info-mode
+               ("Back" "←")             ; left-arrow
+               ("Forward" "→")          ; right-arrow
+               ("Previous" "◁")         ; prev-node
+               ("Next" "▷")             ; next-node
+               ("Up" "△")               ; up-node
+               ("Top" "🏠")             ; home
+               ("Go To Node" "✪")       ; jump-to
+               ("Index" "📑")           ; index
+               ("Search" "🔍")          ; search
+               ("Exit" "🚪")            ; exit
+               ))
+  "Mapping of button text to Unicode symbols to use as icons.")
 
 (defface window-tool-bar-button
   '((default
