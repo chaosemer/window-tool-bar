@@ -308,9 +308,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            ;; FIXME: This would be better done if it actually used the
            ;; image spec.
            (when-let ((replace (and window-tool-bar-show-unicode-images
-                                    (assoc-string
-                                     str window-tool-bar-unicode-image-map))))
-             (setf str (nth 1 replace)
+                                    (window-tool-bar--find-unicode-icon str))))
+             (setf str (concat replace)
                    len (length str)))
 
            ;; Depending on style, Images can be displayed to the
@@ -528,25 +527,76 @@ start Emacs with \"emacs -nw\"."
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
-(defvar window-tool-bar-unicode-image-map
-  (copy-tree '(;; help-mode
-               ("Previous Topic" "←")   ; left-arrow
-               ("Next Topic" "→")       ; right-arrow
-               ("Search" "🔍")          ; search
-               ("Quit" "🗙")             ; close
-               ;; info-mode
-               ("Back" "←")             ; left-arrow
-               ("Forward" "→")          ; right-arrow
-               ("Previous" "◁")         ; prev-node
-               ("Next" "▷")             ; next-node
-               ("Up" "△")               ; up-node
-               ("Top" "🏠")             ; home
-               ("Go To Node" "✪")       ; jump-to
-               ("Index" "📑")           ; index
-               ("Search" "🔍")          ; search
-               ("Exit" "🚪")            ; exit
+(defcustom window-tool-bar-unicode-image-map
+  (copy-tree '(
+               (close "🗙")
+               (exit "🚪")
+               (help "🛟")
+               (home "🏠")
+               (index "📑")
+               (jump-to "✪")
+               (left-arrow "←")
+               (next-node "▷")
+               (prev-node "◁")
+               (right-arrow "→")
+               (search "🔍")
+               (search-replace "📝")
+               (undo "⎌")
+               (up-node "△")
                ))
-  "Mapping of button text to Unicode symbols to use as icons.")
+  "Mapping of image names to Unicode symbols that can be used as icons."
+  :type '(list string string)
+  :group 'window-tool-bar
+  :package-version '(window-tool-bar . "0.3"))
+
+(defvar window-tool-bar--major-mode-image-names
+  (copy-tree '((help-mode
+                "Previous Topic" left-arrow
+                "Next Topic" right-arrow
+                "Search" search
+                "Quit" close)
+               (Info-mode
+                "Back" left-arrow
+                "Forward" right-arrow
+                "Previous" prev-node
+                "Next" next-node
+                "Up" up-node
+                "Top" home
+                "Go To Node" jump-to
+                "Index" index
+                "Search" search
+                "Exit" exit)))
+  "Mapping of button text for a node to an image name.
+
+This follows the structure ((MODE-NAME TEXT IMAGE ...) ...).")
+
+(defvar window-tool-bar--isearch-image-names
+  (copy-tree '("Repeat Backward" left-arrow
+               "Repeat Forward" right-arrow
+               "Abort" close
+               "Finish" exit
+               "Undo" undo
+               "Replace" search-replace
+               "Show Hits" index
+               "Help" help))
+  "like `window-tool-bar--major-mode-image-names', for isearch specifically.")
+
+(defun window-tool-bar--find-unicode-icon (text)
+  "Return the unicode icon for a tool-bar button.
+
+TEXT is the text of a tool-bar button."
+  (let ((mode-image-names
+         (alist-get major-mode window-tool-bar--major-mode-image-names))
+        (isearch-image-names (and isearch-mode
+                                  window-tool-bar--isearch-image-names)))
+    (when-let (;; This is a workaround that the <tool-bar> map "forgets"
+               ;; what the source image name is.
+               (image-name (or (plist-get isearch-image-names text #'equal)
+                               (plist-get mode-image-names text #'equal)))
+               ;; Now that we have the image name, find the appropriate icon.
+               (icon-list (alist-get image-name window-tool-bar-unicode-image-map)))
+      ;; FIXME: Do a display-based fallback
+      (car icon-list))))
 
 (defface window-tool-bar-button
   '((default
