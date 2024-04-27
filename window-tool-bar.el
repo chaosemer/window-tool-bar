@@ -8,6 +8,10 @@
 ;; Keywords: mouse
 ;; Package-Requires: ((emacs "29.1"))
 
+;; This is a GNU ELPA :core package.  Avoid adding functionality that
+;; is not available in the version of Emacs recorded above or any of
+;; the package dependencies.
+
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
@@ -125,7 +129,7 @@ The total number of requests is the sum of this and
 
 (defun window-tool-bar--memory-use-avg-step1 ()
   "Return average memory use delta during step 1."
-  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+  (mapcar (lambda (elt) (/ (float elt) window-tool-bar--refresh-done-count))
           window-tool-bar--memory-use-delta-step1))
 
 (defun window-tool-bar--memory-use-avg-step2 ()
@@ -141,7 +145,7 @@ The total number of requests is the sum of this and
   (require 'time-stamp)
   (save-selected-window
     (pop-to-buffer "*WTB Memory Report*")
-    (unless (eq major-mode 'special-mode)
+    (unless (derived-mode-p 'special-mode)
       (special-mode))
 
     (goto-char (point-max))
@@ -156,18 +160,17 @@ The total number of requests is the sum of this and
        "Step 2" (window-tool-bar--memory-use-avg-step2))
       (insert (format "Refresh count  %d\n" window-tool-bar--refresh-done-count)
               (format "Refresh executed percent %.2f\n"
-                      (/ window-tool-bar--refresh-done-count
+                      (/ (float window-tool-bar--refresh-done-count)
                          (+ window-tool-bar--refresh-done-count
-                            window-tool-bar--refresh-skipped-count)
-                         1.0))
+                            window-tool-bar--refresh-skipped-count)))
               "\n"))))
 
 (defun window-tool-bar--insert-memory-use (label avg-memory-use)
   "Insert memory use into current buffer.
 
-LABEL: A prefix string to be in front of the data.
-AVG-MEMORY-USE: A list of averages, with the same meaning as
-  `memory-use-counts'."
+LABEL is a prefix string to be in front of the data.
+AVG-MEMORY-USE is a list of averages, with the same meaning as
+`memory-use-counts'."
   (let* ((label-len (length label))
          (padding (make-string label-len ?\s)))
     (cl-loop for usage in avg-memory-use
@@ -208,7 +211,8 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
 
 ;; Register bindings that stay in isearch.  Technically, these
 ;; commands don't pop up a menu but they act very similar in that they
-;; end up calling an actual command via `call-interactively'.
+;; are caused by mouse input and may call commands via
+;; `call-interactively'.
 (push 'window-tool-bar--call-button isearch-menu-bar-commands)
 (push 'window-tool-bar--ignore isearch-menu-bar-commands)
 
@@ -249,9 +253,9 @@ This is for when you want more customizations than
                ;; box starts at the leftmost pixel of the tab-line.
                ;; Add a single space in this case so the box displays
                ;; correctly.
-               (when (display-supports-face-attributes-p
-                      '(:box (line-width 1)))
-                 (propertize " " 'display '(space :width (1))))
+               (and (display-supports-face-attributes-p
+                     '(:box (line-width 1)))
+                    (propertize " " 'display '(space :width (1))))
                result))
         (cl-incf window-tool-bar--refresh-done-count))
     (cl-incf window-tool-bar--refresh-skipped-count))
@@ -259,20 +263,16 @@ This is for when you want more customizations than
   window-tool-bar-string--cache)
 
 (defconst window-tool-bar--graphical-separator
-  (let ((str (make-string 3 ?\s)))
-    (set-text-properties 0 1 '(display (space :width (4))) str)
-    (set-text-properties 1 2
-                         '(display (space :width (1))
-                           face (:inverse-video t))
-                         str)
-    (set-text-properties 2 3 '(display (space :width (4))) str)
-    str))
+  (concat
+   (propertize " " 'display '(space :width (4)))
+   (propertize " " 'display '(space :width (1) face (:inverse-video t)))
+   (propertize " " 'display '(space :width (4)))))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
 
-MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
-  (pcase menu-item
+MENU-ITEM is a menu item to convert.  See info node (elisp)Tool Bar."
+  (pcase-exhaustive menu-item
     ;; Separators
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
@@ -331,7 +331,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
         (call-interactively cmd)))))
 
 (defun window-tool-bar--ignore ()
-  "Do nothing.  This command exists for isearch."
+  "Internal command so isearch does not exit on button-down events."
   (interactive)
   nil)
 
@@ -373,7 +373,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 ;;;###autoload
 (define-minor-mode window-tool-bar-mode
   "Toggle display of the tool bar in the tab line of the current buffer."
-  :lighter nil
+  :global nil
   (let ((should-display (and window-tool-bar-mode
                              (not (eq tool-bar-map
                                       (default-value 'tool-bar-map))))))
