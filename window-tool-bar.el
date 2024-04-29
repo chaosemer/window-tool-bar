@@ -66,6 +66,9 @@
 ;; Not all features planned are implemented yet.  Eventually I would
 ;; like to also generally make tool bars better.
 ;;
+;; 1.0 work:
+;; * Improved support for text terminals
+;;
 ;; Post 1.0 work:
 ;;
 ;; * Clean up Emacs tool bars
@@ -300,11 +303,8 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
            ;; Pretend to support icons on text terminals based on
            ;; string replacement.
-           ;; 
-           ;; FIXME: This would be better done if it actually used the
-           ;; image spec.
            (when-let ((replace (and window-tool-bar-show-unicode-images
-                                    (window-tool-bar--find-unicode-icon str))))
+                                    (window-tool-bar--find-unicode-icon key))))
              (setf str (concat replace)
                    len (length str)))
 
@@ -594,74 +594,52 @@ start Emacs with \"emacs -nw\"."
   :package-version '(window-tool-bar . "0.3"))
 
 (defcustom window-tool-bar-unicode-image-map
-  (copy-tree '(
-               (close "🗙")
-               (exit "🚪")
-               (help "🛟")
-               (home "🏠")
-               (index "📑")
-               (jump-to "✪")
+  (copy-tree '(;; Prefer text in CP437 for display compatibility.
+               (close "x")
+               (exit "🚪")              ;no good sym in CP437
+               (help "🛟")              ;no good sym in CP437
+               (home "⌂")
+               (index "§")
+               (jump-to "☼")
                (left-arrow "←")
-               (next-node "▷")
-               (prev-node "◁")
+               (next-node "►")
+               (prev-node "◄")
                (right-arrow "→")
-               (search "🔍")
-               (search-replace "📝")
-               (undo "⎌")
-               (up-node "△")
+               (search "🔍")            ;no good sym in CP437
+               (search-replace "📝")    ;no good sym in CP437
+               ;;(undo "⎌")
+               (up-node "▲")
                ))
   "Mapping of image names to Unicode symbols that can be used as icons."
   :type '(list string string)
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
-(defvar window-tool-bar--major-mode-image-names
-  (copy-tree '((help-mode
-                "Previous Topic" left-arrow
-                "Next Topic" right-arrow
-                "Search" search
-                "Quit" close)
-               (Info-mode
-                "Back" left-arrow
-                "Forward" right-arrow
-                "Previous" prev-node
-                "Next" next-node
-                "Up" up-node
-                "Top" home
-                "Go To Node" jump-to
-                "Index" index
-                "Search" search
-                "Exit" exit)))
-  "Mapping of button text for a node to an image name.
-
-This follows the structure ((MODE-NAME TEXT IMAGE ...) ...).")
-
-(defvar window-tool-bar--isearch-image-names
-  (copy-tree '("Repeat Backward" left-arrow
-               "Repeat Forward" right-arrow
-               "Abort" close
-               "Finish" exit
-               "Undo" undo
-               "Replace" search-replace
-               "Show Hits" index
-               "Help" help))
-  "like `window-tool-bar--major-mode-image-names', for isearch specifically.")
-
-(defun window-tool-bar--find-unicode-icon (text)
+(defun window-tool-bar--find-unicode-icon (key)
   "Return the unicode icon for a tool-bar button.
 
-TEXT is the text of a tool-bar button."
-  (let ((mode-image-names
-         (alist-get major-mode window-tool-bar--major-mode-image-names))
-        (isearch-image-names (and isearch-mode
-                                  window-tool-bar--isearch-image-names)))
-    (when-let (;; This is a workaround that the <tool-bar> map "forgets"
-               ;; what the source image name is.
-               (image-name (or (plist-get isearch-image-names text #'equal)
-                               (plist-get mode-image-names text #'equal)))
-               ;; Now that we have the image name, find the appropriate icon.
-               (icon-list (alist-get image-name window-tool-bar-unicode-image-map)))
-      ;; FIXME: Do a display-based fallback
+KEY is the menu item key.  TEXT is the text of a tool-bar button."
+  (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
+         (item (assq key tool-bar-items)))
+    (when-let ((plist (and item
+                           (eq (cadr item) 'menu-item)
+                           (cddddr item))) ;Skip key, menu-item, string, binding
+               (image-expr (plist-get plist :image))
+
+               ;; This depends on `tool-bar--image-expression'
+               ;; internals, specifically that the first string in the
+               ;; expression is always a file name.
+               (image-expr-cond (and (eq (car image-expr) 'find-image)
+                                     (eq (caadr image-expr) 'cond)
+                                     (cdadr image-expr)))
+               (image-expr-quoted-specs (cadar image-expr-cond))
+               (image-expr-first-spec (caadr image-expr-quoted-specs))
+               (image-expr-file-name (plist-get image-expr-first-spec :file))
+               (icon-name (intern (file-name-sans-extension image-expr-file-name)))
+
+               ;; Now that we have a name, find the appropriate icon
+               (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
+      ;; FIXME: Do a display-based-fallback
       (car icon-list))))
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
