@@ -376,16 +376,18 @@ MENU-ITEM is a menu item to convert.  See info node (elisp)Tool Bar."
   :global nil
   (let ((should-display (and window-tool-bar-mode
                              (not (eq tool-bar-map
-                                      (default-value 'tool-bar-map))))))
-    (if (fboundp 'tab-line-set-display)
-        ;; Newly added function for Emacs 30.
-        (tab-line-set-display 'window-tool-bar-mode
-                              (and should-display
-                                   '(:eval (window-tool-bar-string))))
-      ;; Legacy path for Emacs 29.
-      (setq tab-line-format
-            (and should-display
-                 '(:eval (window-tool-bar-string)))))))
+                                      (default-value 'tool-bar-map)))))
+        (default-value '(:eval (window-tool-bar-string))))
+
+    ;; Preserve existing tab-line set outside of this mode
+    (if (or (null tab-line-format)
+	    (equal tab-line-format default-value))
+        (if should-display
+            (setq tab-line-format default-value)
+          (setq tab-line-format nil))
+      (message
+       "tab-line-format set outside of window-tool-bar-mode, currently `%S'"
+       tab-line-format))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-window-tool-bar-mode
