@@ -465,6 +465,10 @@ capabilities."
   :group 'window-tool-bar)
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
+
+;; This special variable is added in Emacs 30.1.
+(defvar tool-bar-always-show-default)
+
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
   (let ((tool-bar-always-show-default nil))
