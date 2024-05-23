@@ -48,6 +48,9 @@
 ;; If you want to share space with an existing tab line, mode line, or
 ;; header line, add (:eval (window-tool-bar-string)) to
 ;; `tab-line-format', `mode-line-format', or `header-line-format'.
+;;
+;; For additional documentation, see info node `(emacs)Window Tool
+;; Bar'
 
 ;;; Known issues:
 ;;
@@ -271,7 +274,7 @@ This is for when you want more customizations than
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
 
-MENU-ITEM is a menu item to convert.  See info node (elisp)Tool Bar."
+MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
   (pcase-exhaustive menu-item
     ;; Separators
     ((or `(,_ "--")
