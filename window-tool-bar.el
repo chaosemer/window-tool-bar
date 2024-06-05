@@ -35,11 +35,11 @@
 ;; generally have sensible tool bars, for example: *info*, *help*, and
 ;; *eww* have them.
 ;;
-;; It does this while being mindful of screen real estate.  Most modes
-;; do not provide a custom tool bar, and this package does not show the
-;; default tool bar.  This means that for most buffers there will be no
-;; space taken up.  Furthermore, you can put this tool bar in the mode
-;; line or tab line if you want to share it with existing content.
+;; It does this while being mindful of screen real estate.  If
+;; `tool-bar-map' is nil, then this package will not take up any space
+;; for an empty tool bar.  Most modes do not define a custom tool bar,
+;; so calling (setq tool-bar-map nil) in your init file will make most
+;; buffers not take up space for a tool bar.
 ;;
 ;; To get the default behavior, run (global-window-tool-bar-mode 1) or
 ;; enable via M-x customize-group RET window-tool-bar RET.  This uses
@@ -397,8 +397,7 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
   "Toggle display of the tool bar in the tab line of the current buffer."
   :global nil
   (let ((should-display (and window-tool-bar-mode
-                             (not (eq tool-bar-map
-                                      (default-value 'tool-bar-map)))))
+                             tool-bar-map))
         (default-value '(:eval (window-tool-bar-string))))
 
     ;; Preserve existing tab-line set outside of this mode
