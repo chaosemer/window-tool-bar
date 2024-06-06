@@ -4,7 +4,7 @@
 
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
-;; Version: 0.2
+;; Version: 0.2.1
 ;; Keywords: mouse
 ;; Package-Requires: ((emacs "29.1"))
 
