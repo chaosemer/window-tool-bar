@@ -6,7 +6,7 @@
 ;; Created: Nov 21, 2023
 ;; Version: 0.2.1
 ;; Keywords: mouse
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 
 ;; This is a GNU ELPA :core package.  Avoid adding functionality that
 ;; is not available in the version of Emacs recorded above or any of
@@ -95,6 +95,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'mwheel)
 (require 'tab-line)
 (require 'tool-bar)
