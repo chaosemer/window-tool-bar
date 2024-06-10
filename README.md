@@ -1,6 +1,7 @@
 # Window Tool Bar Mode
 [![GPL v3](https://img.shields.io/badge/license-GPL_v3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
 [![Build Status](https://github.com/chaosemer/window-tool-bar/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/chaosemer/window-tool-bar/actions)
+[![GNU ELPA](https://elpa.gnu.org/packages/window-tool-bar.svg)](https://elpa.gnu.org/packages/window-tool-bar)
 
 Add tool bars to windows.  Keep tool bars clean and useful for
 experienced Emacs users.
@@ -23,19 +24,24 @@ works especially well with in modes such as \*info\*, \*help\*, and
 
 ## Installation
 
-The easiest way to install window-tool-bar-mode is on GNU Emacs 29 via
-`package-vc-install`. Just run `M-x` `package-vc-install` `RET`
-`http://github.com/chaosemer/window-tool-bar-mode` `RET`. This installs
-the package locally.
+Installing is as simple as `M-x package-install RET window-tool-bar`.
+Additionally, on GNU Emacs 29 and higher, you can run `M-x
+package-vc-install RET
+http://github.com/chaosemer/window-tool-bar-mode` to install directly
+from source.
 
 ## Customization
 
-The default behavior is to make the per-window tab line show tool bars
-if the mode has a custom tool bar.  To enable this behavior either add
+The default behavior is to make the per-window tab line show the tool
+bar for that buffer.  To enable this behavior either add
 `(global-window-tool-bar-mode 1)` to your init file or enable via
 customize via `M-x` `customize-group` `RET` `window-tool-bar` `RET`.
 If you want to enable for only specific modes, you can add
-`(window-tool-bar-mode 1)` to mode specific hooks.
+`window-tool-bar-mode` to mode specific hooks.
+
+It is common to only want to show mode specific tool bars and not the
+default tool bar.  To do this, add `(setq tool-bar-map nil)` to your
+init file.  This is the configuration the author of this package uses.
 
 If you want to share the tool bar with an existing tab line, add
 `(:eval (window-tool-bar-string))` to `tab-line-format`.  You can also
