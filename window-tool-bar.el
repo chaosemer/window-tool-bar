@@ -6,7 +6,7 @@
 ;; Version: 0.3
 ;; Keywords: mouse
 ;; URL: http://github.com/chaosemer/window-tool-bar
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -76,6 +76,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'mwheel)
 (require 'tab-line)
 (require 'tool-bar)
@@ -171,28 +172,26 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
   :group 'convenience
   :prefix "window-tool-bar-")
 
-(defvar window-tool-bar--button-keymap
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<follow-link>") 'mouse-face)
-    ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
-    ;; bar is not a place the point can travel to.
-    (define-key map (kbd "<tab-line> <mouse-1>") #'window-tool-bar--call-button)
-    (define-key map (kbd "<tab-line> <double-mouse-1>") #'window-tool-bar--call-button)
-    (define-key map (kbd "<tab-line> <triple-mouse-1>") #'window-tool-bar--call-button)
-    (define-key map (kbd "<tab-line> <mouse-2>") #'window-tool-bar--call-button)
-    (define-key map (kbd "<tab-line> <double-mouse-2>") #'window-tool-bar--call-button)
-    (define-key map (kbd "<tab-line> <triple-mouse-2>") #'window-tool-bar--call-button)
+(defvar-keymap window-tool-bar--button-keymap
+  :doc "Keymap used by `window-tool-bar--keymap-entry-to-string'."
+  "<follow-link>" 'mouse-face
+  ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
+  ;; bar is not a place the point can travel to.
+  "<tab-line> <mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
+  "<tab-line> <mouse-2>" #'window-tool-bar--call-button
+  "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
+  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
 
-    ;; Mouse down events do nothing.  A binding is needed so isearch
-    ;; does not exit when the tab bar is clicked.
-    (define-key map (kbd "<tab-line> <down-mouse-1>") #'window-tool-bar--ignore)
-    (define-key map (kbd "<tab-line> <double-down-mouse-1>") #'window-tool-bar--ignore)
-    (define-key map (kbd "<tab-line> <triple-down-mouse-1>") #'window-tool-bar--ignore)
-    (define-key map (kbd "<tab-line> <down-mouse-2>") #'window-tool-bar--ignore)
-    (define-key map (kbd "<tab-line> <double-down-mouse-2>") #'window-tool-bar--ignore)
-    (define-key map (kbd "<tab-line> <triple-down-mouse-2>") #'window-tool-bar--ignore)
-    map)
-  "Keymap used by `window-tool-bar--keymap-entry-to-string'.")
+  ;; Mouse down events do nothing.  A binding is needed so isearch
+  ;; does not exit when the tab bar is clicked.
+  "<tab-line> <down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <double-down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
+  "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
+  "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 ;; Register bindings that stay in isearch.  Technically, these
@@ -580,7 +579,7 @@ If nil, the default tool bar is not shown."
            (eq 'text (window-tool-bar--style)))
       ;; This code path is a less efficient workaround.
       (window-tool-bar--make-keymap-1)
-    (global-key-binding (kbd "<tool-bar>"))))
+    (keymap-global-lookup "<tool-bar>")))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
