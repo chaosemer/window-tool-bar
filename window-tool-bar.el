@@ -1,6 +1,7 @@
 ;;; window-tool-bar.el --- Add tool bars inside windows -*- lexical-binding: t -*-
 
-;; Copyright 2023 Jared Finder
+;; Copyright (C) 2023-2024 Free Software Foundation, Inc.
+
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
 ;; Version: 0.3
@@ -8,20 +9,24 @@
 ;; URL: http://github.com/chaosemer/window-tool-bar
 ;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 
-;; This file is not part of GNU Emacs.
+;; This is a GNU ELPA :core package.  Avoid adding functionality that
+;; is not available in the version of Emacs recorded above or any of
+;; the package dependencies.
 
-;; This program is free software; you can redistribute it and/or modify
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -31,11 +36,11 @@
 ;; generally have sensible tool bars, for example: *info*, *help*, and
 ;; *eww* have them.
 ;;
-;; It does this while being mindful of screen real estate.  Most modes
-;; do not provide a custom tool bar, and this package does not show the
-;; default tool bar.  This means that for most buffers there will be no
-;; space taken up.  Furthermore, you can put this tool bar in the mode
-;; line or tab line if you want to share it with existing content.
+;; It does this while being mindful of screen real estate.  If
+;; `tool-bar-map' is nil, then this package will not take up any space
+;; for an empty tool bar.  Most modes do not define a custom tool bar,
+;; so calling (setq tool-bar-map nil) in your init file will make most
+;; buffers not take up space for a tool bar.
 ;;
 ;; To get the default behavior, run (global-window-tool-bar-mode 1) or
 ;; enable via M-x customize-group RET window-tool-bar RET.  This uses
@@ -44,6 +49,9 @@
 ;; If you want to share space with an existing tab line, mode line, or
 ;; header line, add (:eval (window-tool-bar-string)) to
 ;; `tab-line-format', `mode-line-format', or `header-line-format'.
+;;
+;; For additional documentation, see info node `(emacs)Window Tool
+;; Bar'
 
 ;;; Known issues:
 ;;
@@ -87,7 +95,7 @@
 ;; lot of garbage.  So this benchmarking focuses on garbage
 ;; generation.  Since it has to run after most commands, generating
 ;; significantly more garbage will cause noticeable performance
-;; degration.
+;; degradation.
 ;;
 ;; The refresh has two steps:
 ;;
@@ -96,7 +104,7 @@
 ;; bar string.
 ;;
 ;; Additionally, we keep track of the percentage of commands that
-;; acutally created a refresh.
+;; actually created a refresh.
 (defvar window-tool-bar--memory-use-delta-step1 (make-list 7 0)
   "Absolute delta of memory use counters during step 1.
 This is a list in the same structure as `memory-use-counts'.")
@@ -114,23 +122,23 @@ The total number of requests is the sum of this and
 
 (defun window-tool-bar--memory-use-avg-step1 ()
   "Return average memory use delta during step 1."
-  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+  (mapcar (lambda (elt) (/ (float elt) window-tool-bar--refresh-done-count))
           window-tool-bar--memory-use-delta-step1))
 
 (defun window-tool-bar--memory-use-avg-step2 ()
   "Return average memory use delta during step 2."
-  (mapcar (lambda (elt) (/ elt window-tool-bar--refresh-done-count 1.0))
+  (mapcar (lambda (elt) (/ (float elt) window-tool-bar--refresh-done-count))
           window-tool-bar--memory-use-delta-step2))
 
 (declare-function time-stamp-string "time-stamp")
 
-(defun window-tool-bar-show-memory-use ()
-  "Pop up a window showing the memory use metrics."
+(defun window-tool-bar-debug-show-memory-use ()
+  "Development-only command to show memory used by `window-tool-bar-string'."
   (interactive)
   (require 'time-stamp)
   (save-selected-window
     (pop-to-buffer "*WTB Memory Report*")
-    (unless (eq major-mode 'special-mode)
+    (unless (derived-mode-p 'special-mode)
       (special-mode))
 
     (goto-char (point-max))
@@ -145,27 +153,27 @@ The total number of requests is the sum of this and
        "Step 2" (window-tool-bar--memory-use-avg-step2))
       (insert (format "Refresh count  %d\n" window-tool-bar--refresh-done-count)
               (format "Refresh executed percent %.2f\n"
-                      (/ window-tool-bar--refresh-done-count
+                      (/ (float window-tool-bar--refresh-done-count)
                          (+ window-tool-bar--refresh-done-count
-                            window-tool-bar--refresh-skipped-count)
-                         1.0))
+                            window-tool-bar--refresh-skipped-count)))
               "\n"))))
 
 (defun window-tool-bar--insert-memory-use (label avg-memory-use)
   "Insert memory use into current buffer.
 
-LABEL: A prefix string to be in front of the data.
-AVG-MEMORY-USE: A list of averages, with the same meaning as
-  `memory-use-counts'."
+LABEL is a prefix string to be in front of the data.
+AVG-MEMORY-USE is a list of averages, with the same meaning as
+`memory-use-counts'."
   (let* ((label-len (length label))
          (padding (make-string label-len ?\s)))
-    (insert (format "%s  %8.2f Conses\n" label (elt avg-memory-use 0)))
-    (insert (format "%s  %8.2f Floats\n" padding (elt avg-memory-use 1)))
-    (insert (format "%s  %8.2f Vector cells\n" padding (elt avg-memory-use 2)))
-    (insert (format "%s  %8.2f Symbols\n" padding (elt avg-memory-use 3)))
-    (insert (format "%s  %8.2f String chars\n" padding (elt avg-memory-use 4)))
-    (insert (format "%s  %8.2f Intervals\n" padding (elt avg-memory-use 5)))
-    (insert (format "%s  %8.2f Strings\n" padding (elt avg-memory-use 6)))))
+    (cl-loop for usage in avg-memory-use
+             for usage-label in '("Conses" "Floats" "Vector cells" "Symbols"
+                                  "String chars" "Intervals" "Strings")
+             for idx from 0
+             do (insert (format "%s  %8.2f %s\n"
+                                (if (= idx 0) label padding)
+                                usage
+                                usage-label)))))
 
 (defgroup window-tool-bar nil
   "Tool bars per-window."
@@ -196,7 +204,8 @@ AVG-MEMORY-USE: A list of averages, with the same meaning as
 
 ;; Register bindings that stay in isearch.  Technically, these
 ;; commands don't pop up a menu but they act very similar in that they
-;; end up calling an actual command via `call-interactively'.
+;; are caused by mouse input and may call commands via
+;; `call-interactively'.
 (push 'window-tool-bar--call-button isearch-menu-bar-commands)
 (push 'window-tool-bar--ignore isearch-menu-bar-commands)
 
@@ -238,9 +247,9 @@ This is for when you want more customizations than the command
                ;; box starts at the leftmost pixel of the tab-line.
                ;; Add a single space in this case so the box displays
                ;; correctly.
-               (when (display-supports-face-attributes-p
-                      '(:box (line-width 1)))
-                 (propertize " " 'display '(space :width (1))))
+               (and (display-supports-face-attributes-p
+                     '(:box (line-width 1)))
+                    (propertize " " 'display '(space :width (1))))
                result))
         (cl-incf window-tool-bar--refresh-done-count))
     (cl-incf window-tool-bar--refresh-skipped-count))
@@ -248,20 +257,16 @@ This is for when you want more customizations than the command
   window-tool-bar-string--cache)
 
 (defconst window-tool-bar--graphical-separator
-  (let ((str (make-string 3 ?\s)))
-    (set-text-properties 0 1 '(display (space :width (4))) str)
-    (set-text-properties 1 2
-                         '(display (space :width (1))
-                           face (:inverse-video t))
-                         str)
-    (set-text-properties 2 3 '(display (space :width (4))) str)
-    str))
+  (concat
+   (propertize " " 'display '(space :width (4)))
+   (propertize " " 'display '(space :width (1) face (:inverse-video t)))
+   (propertize " " 'display '(space :width (4)))))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
 
-MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
-  (pcase menu-item
+MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
+  (pcase-exhaustive menu-item
     ;; Separators
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
@@ -378,19 +383,39 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
         (call-interactively cmd)))))
 
 (defun window-tool-bar--ignore ()
-  "Do nothing.  This command exists for isearch."
+  "Internal command so isearch does not exit on button-down events."
   (interactive)
   nil)
 
+;; static-if was added in Emacs 30, but this packages supports earlier
+;; versions.
+(defmacro window-tool-bar--static-if (condition then-form &rest else-forms)
+  "A conditional compilation macro.
+Evaluate CONDITION at macro-expansion time.  If it is non-nil,
+expand the macro to THEN-FORM.  Otherwise expand it to ELSE-FORMS
+enclosed in a `progn' form.  ELSE-FORMS may be empty."
+  (declare (indent 2)
+           (debug (sexp sexp &rest sexp)))
+  (if (eval condition lexical-binding)
+      then-form
+    (cons 'progn else-forms)))
+
 (defvar window-tool-bar--ignored-event-types
-  (list 'mouse-movement
-        mouse-wheel-down-event mouse-wheel-up-event
-        mouse-wheel-left-event mouse-wheel-right-event
-        (bound-and-true-p mouse-wheel-down-alternate-event)
-        (bound-and-true-p mouse-wheel-up-alternate-event)
-        (bound-and-true-p mouse-wheel-left-alternate-event)
-        (bound-and-true-p mouse-wheel-right-alternate-event)
-        'pinch)
+  (let ((list (append
+               '(mouse-movement pinch
+                 wheel-down wheel-up wheel-left wheel-right)
+               ;; Prior to emacs 30, wheel events could also surface as
+               ;; mouse-<NUM> buttons.
+               (window-tool-bar--static-if (version< emacs-version "30")
+                   (list
+                    mouse-wheel-down-event mouse-wheel-up-event
+                    mouse-wheel-left-event mouse-wheel-right-event
+                    (bound-and-true-p mouse-wheel-down-alternate-event)
+                    (bound-and-true-p mouse-wheel-up-alternate-event)
+                    (bound-and-true-p mouse-wheel-left-alternate-event)
+                    (bound-and-true-p mouse-wheel-right-alternate-event))
+                 nil))))
+    (delete-dups (delete nil list)))
   "Cache for `window-tool-bar--last-command-triggers-refresh-p'.")
 
 (defun window-tool-bar--last-command-triggers-refresh-p ()
@@ -419,7 +444,7 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 ;;;###autoload
 (define-minor-mode window-tool-bar-mode
   "Toggle display of the tool bar in the tab line of the current buffer."
-  :lighter nil
+  :global nil
   (window-tool-bar--force-update))
 
 ;;;###autoload
@@ -437,11 +462,19 @@ MENU-ITEM: Menu item to convert.  See info node (elisp)Tool Bar."
 
 (defun window-tool-bar--force-update ()
   "Forcibly refresh the tool bar state."
-  (if (and window-tool-bar-mode
-           (or window-tool-bar-show-default
-               (not (eq tool-bar-map (default-value 'tool-bar-map)))))
-      (setq tab-line-format '(:eval (window-tool-bar-string)))
-    (setq tab-line-format nil)))
+  (let ((should-display (and window-tool-bar-mode
+                             tool-bar-map))
+        (default-value '(:eval (window-tool-bar-string))))
+
+    ;; Preserve existing tab-line set outside of this mode
+    (if (or (null tab-line-format)
+	    (equal tab-line-format default-value))
+        (if should-display
+            (setq tab-line-format default-value)
+          (setq tab-line-format nil))
+      (message
+       "tab-line-format set outside of window-tool-bar-mode, currently `%S'"
+       tab-line-format))))
 
 (defun window-tool-bar--style ()
   "Return the effective style based on `window-tool-bar-style'.
@@ -573,13 +606,18 @@ If nil, the default tool bar is not shown."
   :set #'window-tool-bar--set-and-refresh)
 
 ;;; Workaround for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334.
+
+;; This special variable is added in Emacs 30.1.
+(defvar tool-bar-always-show-default)
+
 (defun window-tool-bar--get-keymap ()
   "Return the tool bar keymap."
-  (if (and (version< emacs-version "30")
-           (eq 'text (window-tool-bar--style)))
+  (let ((tool-bar-always-show-default nil))
+    (if (and (version< emacs-version "30")
+             (eq 'text (window-tool-bar--style)))
       ;; This code path is a less efficient workaround.
       (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>")))
+    (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
@@ -588,23 +626,23 @@ If nil, the default tool bar is not shown."
   (mapcar (lambda (bind)
             (let (image-exp plist)
               (when (and (eq (car-safe (cdr-safe bind)) 'menu-item)
-			 ;; For the format of menu-items, see node
-			 ;; `Extended Menu Items' in the Elisp manual.
-			 (setq plist (nthcdr (if (consp (nth 4 bind)) 5 4)
-					     bind))
-			 (setq image-exp (plist-get plist :image))
-			 (consp image-exp)
-			 (not (eq (car image-exp) 'image))
-			 (fboundp (car image-exp)))
-		(let ((image (and (display-images-p)
+                         ;; For the format of menu-items, see node
+                         ;; `Extended Menu Items' in the Elisp manual.
+                         (setq plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+                                             bind))
+                         (setq image-exp (plist-get plist :image))
+                         (consp image-exp)
+                         (not (eq (car image-exp) 'image))
+                         (fboundp (car image-exp)))
+                (let ((image (and (display-images-p)
                                   (eval image-exp))))
-		  (unless (and image (image-mask-p image))
-		    (setq image (append image '(:mask heuristic))))
-		  (setq bind (copy-sequence bind)
-			plist (nthcdr (if (consp (nth 4 bind)) 5 4)
-				      bind))
-		  (plist-put plist :image image)))
-	      bind))
+                  (unless (and image (image-mask-p image))
+                    (setq image (append image '(:mask heuristic))))
+                  (setq bind (copy-sequence bind)
+                        plist (nthcdr (if (consp (nth 4 bind)) 5 4)
+                                      bind))
+                  (plist-put plist :image image)))
+              bind))
           tool-bar-map))
 
 (provide 'window-tool-bar)
