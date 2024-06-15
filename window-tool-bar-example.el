@@ -26,6 +26,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'map)
 (require 'tool-bar)
 
@@ -78,8 +79,7 @@ EVENT and DEF are passed by `map-keymap'."
                      (insert (format "    %S\n" (list key value)))))
                  plist))))
 
-(defvar window-tool-bar-example--tool-bar-map
-  (make-sparse-keymap))
+(defvar-keymap window-tool-bar-example--tool-bar-map)
 
 ;; The following properties are supported by window-tool-bar and
 ;; tested below. (:image is not listed since it's always there):
@@ -198,7 +198,7 @@ EVENT and DEF are passed by `map-keymap'."
   ;; buttons being bound to keymaps.
  (lambda ()
    (interactive)
-   (x-popup-menu t (global-key-binding (kbd "<menu-bar>")))))
+   (x-popup-menu t (keymap-global-lookup "<menu-bar>"))))
 
 (defun window-tool-bar-example--prefs ()
   "Binding for toolbar."
