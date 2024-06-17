@@ -303,7 +303,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 image-end)
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
-           (pcase (window-tool-bar--style)
+           (pcase-exhaustive (window-tool-bar--style)
              ('image
               (setf image-start 0
                     image-end len))
@@ -323,9 +323,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (setf str (concat str " ")
                       image-start len
                       image-end (1+ len)
-                      len (1+ len))))
-             (_
-              (error "Unexpected value from window-tool-bar--style")))
+                      len (1+ len)))))
 
            (cond
             ((and enabled button-selected)
