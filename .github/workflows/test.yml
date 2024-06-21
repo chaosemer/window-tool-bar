@@ -20,8 +20,7 @@ jobs:
         with:
           version: ${{ matrix.emacs_version }}
       - uses: actions/checkout@v4
-      # Use deps-main-file as in-progress fix for Package-Requires errors.
-      - uses: leotaku/elisp-check@deps-main-file
+      - uses: leotaku/elisp-check@master
         with:
           check: melpa
           file: '*.el'
