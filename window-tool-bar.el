@@ -469,23 +469,6 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
   "Internal function called by the command `global-window-tool-bar-mode'."
   (when global-window-tool-bar-mode
     (window-tool-bar-mode 1)))
-
-(defun window-tool-bar--style ()
-  "Return the effective style based on `window-tool-bar-style'.
-
-This also takes into account frame capabilities.  If the current
-frame can not display images (see `dislay-images-p'), then this
-will always return text."
-  (if (not (display-images-p))
-      'text
-    (let ((style window-tool-bar-style))
-      (when (eq style 'tool-bar-style)
-        (setf style tool-bar-style))
-      (unless (memq style '(image text both both-horiz text-image-horiz))
-        (setf style (if (fboundp 'tool-bar-get-system-style)
-                        (tool-bar-get-system-style)
-                      'image)))
-      style)))
 
 ;;; Display styling:
 (defcustom window-tool-bar-style 'image
@@ -506,6 +489,23 @@ is used."
                  (const :tag "System default" :value nil))
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
+
+(defun window-tool-bar--style ()
+  "Return the effective style based on `window-tool-bar-style'.
+
+This also takes into account frame capabilities.  If the current
+frame can not display images (see `dislay-images-p'), then this
+will always return text."
+  (if (not (display-images-p))
+      'text
+    (let ((style window-tool-bar-style))
+      (when (eq style 'tool-bar-style)
+        (setf style tool-bar-style))
+      (unless (memq style '(image text both both-horiz text-image-horiz))
+        (setf style (if (fboundp 'tool-bar-get-system-style)
+                        (tool-bar-get-system-style)
+                      'image)))
+      style)))
 
 (defface window-tool-bar-button
   '((default
