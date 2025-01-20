@@ -307,8 +307,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
 
            ;; Pretend to support icons on text terminals based on
            ;; string replacement.
-           (when-let ((replace (and window-tool-bar-show-unicode-images
-                                    (window-tool-bar--find-unicode-icon key))))
+           (when-let* ((replace (and window-tool-bar-show-unicode-images
+                                     (window-tool-bar--find-unicode-icon key))))
              (setf str (concat replace)
                    len (length str)))
 
@@ -555,9 +555,9 @@ start Emacs with \"emacs -nw\"."
 KEY is the menu item key.  TEXT is the text of a tool-bar button."
   (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
          (item (assq key tool-bar-items)))
-    (when-let ((plist (and item
-                           (eq (cadr item) 'menu-item)
-                           (cddddr item))) ;Skip key, menu-item, string, binding
+    (when-let* ((plist (and item
+                            (eq (cadr item) 'menu-item)
+                            (cddddr item))) ;Skip key, menu-item, string, binding
                (image-expr (plist-get plist :image))
 
                ;; This depends on `tool-bar--image-expression'
