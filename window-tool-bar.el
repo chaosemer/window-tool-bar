@@ -1,6 +1,6 @@
 ;;; window-tool-bar.el --- Add tool bars inside windows -*- lexical-binding: t -*-
 
-;; Copyright (C) 2023-2024 Free Software Foundation, Inc.
+;; Copyright (C) 2023-2025 Free Software Foundation, Inc.
 
 ;; Author: Jared Finder <jared@finder.org>
 ;; Created: Nov 21, 2023
@@ -344,8 +344,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                 'face
                                 'window-tool-bar-button-disabled
                                 str)))
-           (when-let ((spec (and image-start image-end
-                                 (plist-get menu-item :image))))
+           (when-let* ((spec (and image-start image-end
+                                  (plist-get menu-item :image))))
              (put-text-property image-start image-end
                                 'display
                                 (append spec
