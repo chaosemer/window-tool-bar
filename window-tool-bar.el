@@ -88,6 +88,11 @@
 (require 'mwheel)
 (require 'tab-line)
 (require 'tool-bar)
+
+(add-to-list 'customize-package-emacs-version-alist
+             '(window-tool-bar ("0.1" . "30.1")
+                               ("0.2" . "30.1")
+                               ("0.3" . "31.1")))
 
 ;;; Benchmarking code
 ;;
