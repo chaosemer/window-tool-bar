@@ -233,7 +233,8 @@ This is for when you want more customizations than the command
                                 (delete nil strs)
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
-                                (if (eq 'text (window-tool-bar--style)) " "
+                                (if t ;; (eq 'text (window-tool-bar--style))
+                                    " "
                                   (propertize " " 'invisible t))))
              (mem2 (memory-use-counts)))
         (cl-mapl (lambda (l-init l0 l1)
@@ -274,7 +275,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
     ((or `(,_ "--")
          `(,_ menu-item ,(and (pred stringp)
                               (pred (string-prefix-p "--")))))
-     (if (eq 'text (window-tool-bar--style)) "|"
+     (if (not (display-graphic-p))
+         "|"
        window-tool-bar--graphical-separator))
 
     ;; Menu item, turn into propertized string button
@@ -305,13 +307,6 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 image-start
                 image-end)
 
-           ;; Pretend to support icons on text terminals based on
-           ;; string replacement.
-           (when-let* ((replace (and window-tool-bar-show-unicode-images
-                                     (window-tool-bar--find-unicode-icon key))))
-             (setf str (concat replace)
-                   len (length str)))
-
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
            (pcase-exhaustive (window-tool-bar--style)
@@ -336,6 +331,16 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                       image-end (1+ len)
                       len (1+ len)))))
 
+           ;; First replace the image with a text icon (if applicable)
+           ;; so we get all the remaining text properties.
+           (when (and image-start image-end)
+             (let ((before (substring str 0 image-start))
+                   (after (substring str image-end)))
+             (setf str (concat before
+                                 (window-tool-bar--find-unicode-icon key)
+                                 after)
+                   len (length str))))
+
            (cond
             ((and enabled button-selected)
              (add-text-properties 0 len
@@ -355,15 +360,6 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                 'face
                                 'window-tool-bar-button-disabled
                                 str)))
-           (when-let* ((spec (and image-start image-end
-                                  (plist-get menu-item :image))))
-             (put-text-property image-start image-end
-                                'display
-                                (append spec
-                                        (if enabled '(:margin 2 :ascent center)
-                                          '(:margin 2 :ascent center
-                                                    :conversion disabled)))
-                                str))
            (let ((help-text (or (plist-get plist :help) name))
                  (keys (where-is-internal binding nil t)))
              (put-text-property 0 len
@@ -507,7 +503,8 @@ is used."
 This also takes into account frame capabilities.  If the current
 frame can not display images (see `dislay-images-p'), then this
 will always return text."
-  (if (not (display-images-p))
+  (if (and (not (display-images-p))
+           (not window-tool-bar-show-unicode-images))
       'text
     (let ((style window-tool-bar-style))
       (when (eq style 'tool-bar-style)
@@ -541,18 +538,18 @@ start Emacs with \"emacs -nw\"."
                (right-arrow "→")
                (search "🔍")            ;no good sym in CP437
                (search-replace "📝")    ;no good sym in CP437
-               ;;(undo "⎌")
+               (undo "↶")               ;no good sym in CP437
                (up-node "▲")
                ))
   "Mapping of image names to Unicode symbols that can be used as icons."
   :type '(list string string)
   :group 'window-tool-bar
-  :package-version '(window-tool-bar . "0.3"))
+  :package-version '(window-tool-bar . "1.0"))
 
-(defun window-tool-bar--find-unicode-icon (key)
+(defun window-tool-bar--find-unicode-icon (key plist)
   "Return the unicode icon for a tool-bar button.
 
-KEY is the menu item key.  TEXT is the text of a tool-bar button."
+KEY is the menu item key."
   (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
          (item (assq key tool-bar-items)))
     (when-let* ((plist (and item
