@@ -429,8 +429,8 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
      ;; interactions that can alter the tool bar.  Specifically, this
      ;; excludes mouse movement, mouse wheel scroll, and pinch.
      (not (member type window-tool-bar--ignored-event-types))
-     ;; Assume that any command that triggers shift select can't alter
-     ;; the tool bar.  This excludes pure navigation commands.
+     ;; Assume that any command that triggers shift select cannot
+     ;; alter the tool bar.  This excludes pure navigation commands.
      (not (window-tool-bar--command-triggers-shift-select-p last-command))
      ;; Assume that self-insert-command won't alter the tool bar.
      ;; This is the most commonly executed command.
@@ -478,11 +478,11 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 ;;; Display styling:
 (defcustom window-tool-bar-style 'image
   "Tool bar style to use for window tool bars.
-The meanining is the same as for `tool-bar-style', which see.  If
+The meaning is the same as for `tool-bar-style', which see.  If
 set to the symbol `tool-bar-style', then use the value of
 `tool-bar-style' instead.
 
-When images can not be displayed (see `display-images-p'), text
+When images cannot be displayed (see `display-images-p'), text
 is used."
   :type '(choice (const :tag "Images" :value image)
                  (const :tag "Text" :value text)
@@ -499,7 +499,7 @@ is used."
   "Return the effective style based on `window-tool-bar-style'.
 
 This also takes into account frame capabilities.  If the current
-frame can not display images (see `dislay-images-p'), then this
+frame cannot display images (see `display-images-p'), then this
 will always return text."
   (if (not (display-images-p))
       'text
