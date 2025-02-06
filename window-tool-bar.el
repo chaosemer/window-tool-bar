@@ -63,11 +63,6 @@
 ;; On GNU Emacs 29 and earlier, performance in terminals is lower than
 ;; on graphical frames.  This is due to a workaround, see "Workaround
 ;; for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
-;;
-;; Dragging empty space on the tab-line (which this package uses to
-;; display the window tool bar) doesn't resize windows.  This is
-;; unlike the mode line, where dragging empty space resizes the
-;; window.
 
 ;;; Todo:
 ;;
