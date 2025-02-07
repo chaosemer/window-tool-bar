@@ -477,16 +477,17 @@ The meaning is the same as for `tool-bar-style', which see.  If
 set to the symbol `tool-bar-style', then use the value of
 `tool-bar-style' instead.
 
-When images cannot be displayed (see `display-images-p'), text
-is used."
-  :type '(choice (const :tag "Images" :value image)
-                 (const :tag "Text" :value text)
-                 ;; This option would require multiple tool bar lines.
-                 ;;(const :tag "Both" :value both)
-                 (const :tag "Both-horiz" :value both-horiz)
-                 (const :tag "Text-image-horiz" :value text-image-horiz)
-                 (const :tag "Inherit tool-bar-style" :value tool-bar-style)
-                 (const :tag "System default" :value nil))
+When images cannot be displayed (see `display-images-p'), the value set
+here is ignored and the window tool bar displays text."
+  :type '(choice
+          (const :tag "Images" :value image)
+          (const :tag "Text" :value text)
+          ;; This option would require multiple tool bar lines.
+          ;;(const :tag "Both, text below image" :value both)
+          (const :tag "Both, text to right of image" :value both-horiz)
+          (const :tag "Both, text to left of image" :value text-image-horiz)
+          (const :tag "Inherit tool-bar-style" :value tool-bar-style)
+          (const :tag "System default" :value nil))
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
@@ -495,7 +496,7 @@ is used."
 
 This also takes into account frame capabilities.  If the current
 frame cannot display images (see `display-images-p'), then this
-will always return text."
+will always return the symbol text."
   (if (not (display-images-p))
       'text
     (let ((style window-tool-bar-style))
