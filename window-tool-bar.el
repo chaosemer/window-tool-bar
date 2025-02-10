@@ -200,6 +200,16 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+
+;; Allow the window tool bar to be placed in header line or mode line
+;; as well.  These use different keymap prefixes.
+(keymap-set window-tool-bar--button-keymap
+            "<header-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+(keymap-set window-tool-bar--button-keymap
+            "<mode-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 ;; Register bindings that stay in isearch.  Technically, these
