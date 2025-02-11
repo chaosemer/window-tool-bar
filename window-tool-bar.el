@@ -311,6 +311,12 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (vert-only (plist-get plist :vert-only))
                 image-start
                 image-end)
+	   ;; Ensure STR is never the empty string, which wouldn't
+	   ;; display at all when concat'ed together.
+	   (when (string-empty-p str)
+	     (setf str (symbol-name binding)
+		   len (length str)))
+
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
            (pcase-exhaustive (window-tool-bar--style)
