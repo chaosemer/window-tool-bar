@@ -381,7 +381,11 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   help-text)
                                 str))
            (put-text-property 0 len 'tool-bar-key key str)
-           str))))))
+           str))))
+
+    ;; Non-menu items that don't get a button.
+    (`(,_ . ,(pred symbolp))
+     nil)))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
@@ -393,6 +397,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
       (select-window (posn-window posn))
       (let* ((str (posn-string posn))
              (key (get-text-property (cdr str) 'tool-bar-key (car str)))
+             ;; FIXME: Use modifier keys which may have a different
+             ;; binding.
              (cmd (lookup-key (window-tool-bar--get-keymap) (vector key))))
         (call-interactively cmd)))))
 
