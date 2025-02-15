@@ -183,23 +183,15 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
 (defvar-keymap window-tool-bar--button-keymap
   :doc "Keymap used by `window-tool-bar--keymap-entry-to-string'."
   "<follow-link>" 'mouse-face
+
   ;; Follow link on all clicks of mouse-1 and mouse-2 since the tool
   ;; bar is not a place the point can travel to.
-  "<tab-line> <mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <double-mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <triple-mouse-1>" #'window-tool-bar--call-button
-  "<tab-line> <mouse-2>" #'window-tool-bar--call-button
-  "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
-  "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
-
-  ;; Mouse down events do nothing.  A binding is needed so isearch
-  ;; does not exit when the tab bar is clicked.
-  "<tab-line> <down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <double-down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
-  "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+  "<tab-line> <down-mouse-1>" #'window-tool-bar--button-down
+  "<tab-line> <double-down-mouse-1>" #'window-tool-bar--button-down
+  "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--button-down
+  "<tab-line> <down-mouse-2>" #'window-tool-bar--button-down
+  "<tab-line> <double-down-mouse-2>" #'window-tool-bar--button-down
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--button-down)
 
 ;; Allow the window tool bar to be placed in header line or mode line
 ;; as well.  These use different keymap prefixes.
@@ -216,6 +208,7 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
 ;; commands don't pop up a menu but they act very similar in that they
 ;; are caused by mouse input and may call commands via
 ;; `call-interactively'.
+(push 'window-tool-bar--button-down isearch-menu-bar-commands)
 (push 'window-tool-bar--call-button isearch-menu-bar-commands)
 (push 'window-tool-bar--ignore isearch-menu-bar-commands)
 
@@ -382,6 +375,21 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                 str))
            (put-text-property 0 len 'tool-bar-key key str)
            str))))))
+
+(defun window-tool-bar--button-down (event)
+  "Start pressing the button the mouse is pointed at."
+  (interactive "e")
+  (catch 'button-press-cancelled
+    (let ((track-mouse t))
+      (message ("event1=%s" event))
+      (while (not (widget-button-release-event-p event))
+        (message "event=%s" event)
+        (setq event (read--potential-mouse-event))
+        (when (mouse-movement-p event)
+          (push event unread-command-events)
+          (throw 'button-press-cancelled t))))
+    (setq last-command-event event)
+    (window-tool-bar--call-button)))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
