@@ -376,14 +376,21 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            (put-text-property 0 len 'tool-bar-key key str)
            str))))))
 
+(defun window-tool-bar--button-release-event-p (event)
+  "Non-nil if EVENT is a mouse-button-release event object."
+  (and (eventp event)
+       (memq (event-basic-type event) '(mouse-1 mouse-2 mouse-3))
+       (or (memq  'click (event-modifiers event))
+           (memq 'double (event-modifiers event))
+           (memq 'triple (event-modifiers event))
+	   (memq   'drag (event-modifiers event)))))
+
 (defun window-tool-bar--button-down (event)
   "Start pressing the button the mouse is pointed at."
   (interactive "e")
   (catch 'button-press-cancelled
     (let ((track-mouse t))
-      (message ("event1=%s" event))
-      (while (not (widget-button-release-event-p event))
-        (message "event=%s" event)
+      (while (not (window-tool-bar--button-release-event-p event))
         (setq event (read--potential-mouse-event))
         (when (mouse-movement-p event)
           (push event unread-command-events)
