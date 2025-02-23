@@ -36,9 +36,9 @@ buffers not take up space for a tool bar.
 ## Installation
 
 Window Tool Bar is included in Emacs 30 and higher. For older Emacsen,
-installing is as simple as `M-x package-install RET window-tool-bar`.
-Additionally, on GNU Emacs 29 and higher, you can run `M-x`
-`package-vc-install` `RET`
+installing is as simple as `M-x` `package-install` `RET`
+`window-tool-bar`.  Additionally, on GNU Emacs 29 and higher, you can
+run `M-x` `package-vc-install` `RET`
 `http://github.com/chaosemer/window-tool-bar-mode` to install directly
 from source.
 
