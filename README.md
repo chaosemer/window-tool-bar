@@ -11,6 +11,7 @@ Add tool bars to windows.  Keep tool bars clean and useful for
 experienced Emacs users.  Tool bars for GUIs and Terminals.
 
 ![A picture is worth a thousand words](images/screenshot.png)
+![The UI works in the terminal, too](images/screenshot_term.png)
 
 You may really like this package if any of the following is true:
 
