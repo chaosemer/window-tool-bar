@@ -10,15 +10,7 @@ This package is a part of GNU Emacs.
 Add tool bars to windows.  Keep tool bars clean and useful for
 experienced Emacs users.  Tool bars for GUIs and Terminals.
 
-<div align="center" width="75%">
-  <img src="images/screenshot.png"><br>
-  Window tool bar in GUIs
-</div>
-<br>
-<div align="center" width="75%">
-  <img src="images/screenshot_term.png"><br>
-  Window tool bar in a terminal
-</div>
+![Screenshot of the window tool bar](images/screenshot.png)]
 
 You may really like this package if any of the following is true:
 
@@ -69,3 +61,8 @@ header line, add `(:eval (window-tool-bar-string))` to
 
 For additional documentation, see info node [(emacs)Window Tool
 Bar](https://www.gnu.org/software/emacs/manual/html_node/emacs/Window-Tool-Bar.html).
+
+## Gallery
+
+| ![Screenshot running inside iTerm2](images/screenshot_term.png) |
+| <div align="center">Running when started as `emacs -nw</div>` |
