@@ -10,7 +10,7 @@ This package is a part of GNU Emacs.
 Add tool bars to windows.  Keep tool bars clean and useful for
 experienced Emacs users.  Tool bars for GUIs and Terminals.
 
-![Screenshot of the window tool bar](images/screenshot.png)]
+![Screenshot of the window tool bar](images/screenshot.png)
 
 You may really like this package if any of the following is true:
 
@@ -64,5 +64,33 @@ Bar](https://www.gnu.org/software/emacs/manual/html_node/emacs/Window-Tool-Bar.h
 
 ## Gallery
 
-| ![Screenshot running inside iTerm2](images/screenshot_term.png) |
-| <div align="center">Running when started as `emacs -nw</div>` |
+### Emacs default GUI
+![Emacs default screenshot](images/emacs_default.png)
+
+### Terminal (iTerm2)
+![iTerm2 screenshot](images/iterm2.png)
+
+### Modus
+![Modus Operandi screenshot](images/modus_operandi.png)
+
+![Modus Vivendi screenshot](images/modus_vivendi.png)
+
+### Doom
+![Doom Nova](images/doom_nova.png)
+
+![Doom Monokai Classic](images/doom_monokai.png)
+
+![Doom Homage White](image/doom_homage.png)
+
+### Zenburn
+![Zenburn](images/zenburn.png)
+
+### Spacemacs
+![Spacemacs Light](image/spacemacs_light.png)
+
+![Spacemacs Dark](image/spacemacs_dark.png)
+
+### Solarized
+![Solarized Light](image/solarized_light.png)
+
+![Solarized Dark](image/solarized_dark.png)
