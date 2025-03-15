@@ -16,7 +16,7 @@ jobs:
       matrix:
         emacs_version: [27.1, 27.2, 28.1, 28.2, 29.1, 29.2, 29.3, 29.4, 30.1]
         # TODO: Revert back to just the melpa check.  Blocked by
-        # https://github.com/purcell/package-lint/issues/289
+        # https://github.com/purcell/package-lint/issues/281
         check: [load-file, byte-compile, checkdoc]
     steps:
       - uses: purcell/setup-emacs@v6.0
