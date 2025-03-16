@@ -33,7 +33,7 @@
 ;; This package puts a tool bar in each window.  This allows you to see
 ;; multiple tool bars simultaneously directly next to the buffer it
 ;; acts on which feels much more intuitive.  Emacs "browsing" modes
-;; generally have sensible tool bars, for example: *info*, *help*, and
+;; generally have sensible tool bars, for example: *info*, *Help*, and
 ;; *eww* have them.
 ;;
 ;; It does this while being mindful of screen real estate.  If
@@ -42,9 +42,12 @@
 ;; so calling (setq tool-bar-map nil) in your init file will make most
 ;; buffers not take up space for a tool bar.
 ;;
-;; To get the default behavior, run (global-window-tool-bar-mode 1) or
-;; enable via M-x customize-group RET window-tool-bar RET.  This uses
-;; the per-window tab line to show the tool bar.
+;; The default behavior is to make the per-window tab line show the
+;; tool bar for each window's buffer.  To enable this, add
+;; (global-window-tool-bar-mode) to your init file or enable via M-x
+;; customize-group RET window-tool-bar RET.  If you want to enable the
+;; window tool bar for only specific modes, you can add
+;; `window-tool-bar-mode' to mode specific hooks.
 ;;
 ;; If you want to share space with an existing tab line, mode line, or
 ;; header line, add (:eval (window-tool-bar-string)) to
@@ -374,7 +377,11 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   help-text)
                                 str))
            (put-text-property 0 len 'tool-bar-key key str)
-           str))))))
+           str))))
+
+    ;; Non-menu items that don't get a button.
+    (`(,_ . ,(pred symbolp))
+     nil)))
 
 (defun window-tool-bar--button-release-event-p (event)
   "Non-nil if EVENT is a mouse-button-release event object."
@@ -408,6 +415,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
       (select-window (posn-window posn))
       (let* ((str (posn-string posn))
              (key (get-text-property (cdr str) 'tool-bar-key (car str)))
+             ;; FIXME: Use modifier keys which may have a different
+             ;; binding.
              (cmd (lookup-key (window-tool-bar--get-keymap) (vector key))))
         (call-interactively cmd)))))
 

@@ -30,13 +30,6 @@
 (require 'map)
 (require 'tool-bar)
 
-(define-derived-mode window-tool-bar-example--mode special-mode
-  "ToolBar-Example"
-  :interactive nil      ;Main entry point is `window-tool-bar-example'
-  (setq-local tool-bar-map window-tool-bar-example--tool-bar-map)
-  (setf buffer-undo-list t)
-  (window-tool-bar-example--refresh))
-
 (defvar window-tool-bar-example--integer 5)
 (defvar window-tool-bar-example--boolean nil)
 (defvar window-tool-bar-example--symbol :lock)
@@ -204,6 +197,13 @@ EVENT and DEF are passed by `map-keymap'."
   "Binding for toolbar."
   (interactive)
   (error "This should not be called"))
+
+(define-derived-mode window-tool-bar-example--mode special-mode
+  "ToolBar-Example"
+  :interactive nil      ;Main entry point is `window-tool-bar-example'
+  (setq-local tool-bar-map window-tool-bar-example--tool-bar-map)
+  (setf buffer-undo-list t)
+  (window-tool-bar-example--refresh))
 
 (provide 'window-tool-bar-example)
 
