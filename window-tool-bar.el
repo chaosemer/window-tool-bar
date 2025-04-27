@@ -33,7 +33,7 @@
 ;; This package puts a tool bar in each window.  This allows you to see
 ;; multiple tool bars simultaneously directly next to the buffer it
 ;; acts on which feels much more intuitive.  Emacs "browsing" modes
-;; generally have sensible tool bars, for example: *info*, *help*, and
+;; generally have sensible tool bars, for example: *info*, *Help*, and
 ;; *eww* have them.
 ;;
 ;; It does this while being mindful of screen real estate.  If
@@ -42,9 +42,12 @@
 ;; so calling (setq tool-bar-map nil) in your init file will make most
 ;; buffers not take up space for a tool bar.
 ;;
-;; To get the default behavior, run (global-window-tool-bar-mode 1) or
-;; enable via M-x customize-group RET window-tool-bar RET.  This uses
-;; the per-window tab line to show the tool bar.
+;; The default behavior is to make the per-window tab line show the
+;; tool bar for each window's buffer.  To enable this, add
+;; (global-window-tool-bar-mode) to your init file or enable via M-x
+;; customize-group RET window-tool-bar RET.  If you want to enable the
+;; window tool bar for only specific modes, you can add
+;; `window-tool-bar-mode' to mode specific hooks.
 ;;
 ;; If you want to share space with an existing tab line, mode line, or
 ;; header line, add (:eval (window-tool-bar-string)) to
@@ -63,11 +66,6 @@
 ;; On GNU Emacs 29 and earlier, performance in terminals is lower than
 ;; on graphical frames.  This is due to a workaround, see "Workaround
 ;; for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
-;;
-;; Dragging empty space on the tab-line (which this package uses to
-;; display the window tool bar) doesn't resize windows.  This is
-;; unlike the mode line, where dragging empty space resizes the
-;; window.
 
 ;;; Todo:
 ;;
@@ -91,6 +89,11 @@
 (require 'mwheel)
 (require 'tab-line)
 (require 'tool-bar)
+
+(add-to-list 'customize-package-emacs-version-alist
+             '(window-tool-bar ("0.1" . "30.1")
+                               ("0.2" . "30.1")
+                               ("0.3" . "31.1")))
 
 ;;; Benchmarking code
 ;;
@@ -203,6 +206,16 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+
+;; Allow the window tool bar to be placed in header line or mode line
+;; as well.  These use different keymap prefixes.
+(keymap-set window-tool-bar--button-keymap
+            "<header-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+(keymap-set window-tool-bar--button-keymap
+            "<mode-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 ;; Register bindings that stay in isearch.  Technically, these
@@ -306,6 +319,11 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (vert-only (plist-get plist :vert-only))
                 image-start
                 image-end)
+	   ;; Ensure STR is never the empty string, which wouldn't
+	   ;; display at all when concat'ed together.
+	   (when (string-empty-p str)
+	     (setf str (symbol-name binding)
+		   len (length str)))
 
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
@@ -336,10 +354,10 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            (when (and image-start image-end)
              (let ((before (substring str 0 image-start))
                    (after (substring str image-end)))
-             (setf str (concat before
+               (setf str (concat before
                                  (window-tool-bar--find-unicode-icon key)
                                  after)
-                   len (length str))))
+                     len (length str))))
 
            (cond
             ((and enabled button-selected)
@@ -352,8 +370,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
             (enabled
              (add-text-properties 0 len
                                   '(mouse-face window-tool-bar-button-hover
-                                    keymap window-tool-bar--button-keymap
-                                    face window-tool-bar-button)
+                                               keymap window-tool-bar--button-keymap
+                                               face window-tool-bar-button)
                                   str))
             (t
              (put-text-property 0 len
@@ -372,7 +390,11 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   help-text)
                                 str))
            (put-text-property 0 len 'tool-bar-key key str)
-           str))))))
+           str))))
+
+    ;; Non-menu items that don't get a button.
+    (`(,_ . ,(pred symbolp))
+     nil)))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
@@ -384,6 +406,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
       (select-window (posn-window posn))
       (let* ((str (posn-string posn))
              (key (get-text-property (cdr str) 'tool-bar-key (car str)))
+             ;; FIXME: Use modifier keys which may have a different
+             ;; binding.
              (cmd (lookup-key (window-tool-bar--get-keymap) (vector key))))
         (call-interactively cmd)))))
 
@@ -408,7 +432,7 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 (defvar window-tool-bar--ignored-event-types
   (let ((list (append
                '(mouse-movement pinch
-                 wheel-down wheel-up wheel-left wheel-right)
+                                wheel-down wheel-up wheel-left wheel-right)
                ;; Prior to emacs 30, wheel events could also surface as
                ;; mouse-<NUM> buttons.
                (window-tool-bar--static-if (version< emacs-version "30")
@@ -431,8 +455,8 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
      ;; interactions that can alter the tool bar.  Specifically, this
      ;; excludes mouse movement, mouse wheel scroll, and pinch.
      (not (member type window-tool-bar--ignored-event-types))
-     ;; Assume that any command that triggers shift select can't alter
-     ;; the tool bar.  This excludes pure navigation commands.
+     ;; Assume that any command that triggers shift select cannot
+     ;; alter the tool bar.  This excludes pure navigation commands.
      (not (window-tool-bar--command-triggers-shift-select-p last-command))
      ;; Assume that self-insert-command won't alter the tool bar.
      ;; This is the most commonly executed command.
@@ -480,20 +504,21 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 ;;; Display styling:
 (defcustom window-tool-bar-style 'image
   "Tool bar style to use for window tool bars.
-The meanining is the same as for `tool-bar-style', which see.  If
+The meaning is the same as for `tool-bar-style', which see.  If
 set to the symbol `tool-bar-style', then use the value of
 `tool-bar-style' instead.
 
-When images can not be displayed (see `display-images-p'), text
-is used."
-  :type '(choice (const :tag "Images" :value image)
-                 (const :tag "Text" :value text)
-                 ;; This option would require multiple tool bar lines.
-                 ;;(const :tag "Both" :value both)
-                 (const :tag "Both-horiz" :value both-horiz)
-                 (const :tag "Text-image-horiz" :value text-image-horiz)
-                 (const :tag "Inherit tool-bar-style" :value tool-bar-style)
-                 (const :tag "System default" :value nil))
+When images cannot be displayed (see `display-images-p'), the value set
+here is ignored and the window tool bar displays text."
+  :type '(choice
+          (const :tag "Images" :value image)
+          (const :tag "Text" :value text)
+          ;; This option would require multiple tool bar lines.
+          ;;(const :tag "Both, text below image" :value both)
+          (const :tag "Both, text to right of image" :value both-horiz)
+          (const :tag "Both, text to left of image" :value text-image-horiz)
+          (const :tag "Inherit tool-bar-style" :value tool-bar-style)
+          (const :tag "System default" :value nil))
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
