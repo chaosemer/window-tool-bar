@@ -354,7 +354,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   str))
             (enabled
              (add-text-properties 0 len
-                                  '(mouse-face window-tool-bar-button-hover
+                                  '(mouse-face
+                                    window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
                                     face window-tool-bar-button)
                                   str))
@@ -426,7 +427,7 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 (defvar window-tool-bar--ignored-event-types
   (let ((list (append
                '(mouse-movement pinch
-                 wheel-down wheel-up wheel-left wheel-right)
+                                wheel-down wheel-up wheel-left wheel-right)
                ;; Prior to emacs 30, wheel events could also surface as
                ;; mouse-<NUM> buttons.
                (window-tool-bar--static-if (version< emacs-version "30")
@@ -614,9 +615,9 @@ will always return the symbol text."
   (let ((tool-bar-always-show-default nil))
     (if (and (version< emacs-version "30")
              (eq 'text (window-tool-bar--style)))
-      ;; This code path is a less efficient workaround.
-      (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>"))))
+        ;; This code path is a less efficient workaround.
+        (window-tool-bar--make-keymap-1)
+      (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
