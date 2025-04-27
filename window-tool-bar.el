@@ -328,7 +328,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
            (pcase-exhaustive (window-tool-bar--style)
-             ('image
+             ((or 'image 'unicode-image)
               (setf image-start 0
                     image-end len))
              ('text
@@ -512,6 +512,7 @@ When images cannot be displayed (see `display-images-p'), the value set
 here is ignored and the window tool bar displays text."
   :type '(choice
           (const :tag "Images" :value image)
+          (const :tag "Uncode Images" :value unicode-image)
           (const :tag "Text" :value text)
           ;; This option would require multiple tool bar lines.
           ;;(const :tag "Both, text below image" :value both)
@@ -534,7 +535,7 @@ will always return text."
     (let ((style window-tool-bar-style))
       (when (eq style 'tool-bar-style)
         (setf style tool-bar-style))
-      (unless (memq style '(image text both both-horiz text-image-horiz))
+      (unless (memq style '(unicode-image image text both both-horiz text-image-horiz))
         (setf style (if (fboundp 'tool-bar-get-system-style)
                         (tool-bar-get-system-style)
                       'image)))
@@ -567,36 +568,32 @@ start Emacs with \"emacs -nw\"."
                (up-node "▲")
                ))
   "Mapping of image names to Unicode symbols that can be used as icons."
-  :type '(list string string)
+  :type '(list symbol string)
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "1.0"))
 
-(defun window-tool-bar--find-unicode-icon (key plist)
+(defun window-tool-bar--find-unicode-icon (key)
   "Return the unicode icon for a tool-bar button.
 
 KEY is the menu item key."
   (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
          (item (assq key tool-bar-items)))
-    (when-let* ((plist (and item
-                            (eq (cadr item) 'menu-item)
-                            (cddddr item))) ;Skip key, menu-item, string, binding
-               (image-expr (plist-get plist :image))
+    (if-let* ((plist (and item
+                          (eq (cadr item) 'menu-item)
+                          (cddddr item))) ;Skip key, menu-item, string, binding
+              (image-expr (plist-get plist :image))
 
-               ;; This depends on `tool-bar--image-expression'
-               ;; internals, specifically that the first string in the
-               ;; expression is always a file name.
-               (image-expr-cond (and (eq (car image-expr) 'find-image)
-                                     (eq (caadr image-expr) 'cond)
-                                     (cdadr image-expr)))
-               (image-expr-quoted-specs (cadar image-expr-cond))
-               (image-expr-first-spec (caadr image-expr-quoted-specs))
-               (image-expr-file-name (plist-get image-expr-first-spec :file))
-               (icon-name (intern (file-name-sans-extension image-expr-file-name)))
+              ;; This depends on `tool-bar--image-expression'
+              ;; internals, specifically that the first string in the
+              ;; expression is always a file name.
+              (image (if (functionp (car image-expr)) (eval image-expr) image-expr))
+              (image-expr-file-name (plist-get (cdr image) :file))
+              (icon-name (intern (file-name-base image-expr-file-name)))
 
-               ;; Now that we have a name, find the appropriate icon
-               (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
-      ;; FIXME: Do a display-based-fallback
-      (car icon-list))))
+              ;; Now that we have a name, find the appropriate icon
+              (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
+        ;; FIXME: Do a display-based-fallback
+        (car icon-list) "?")))
 
 (defface window-tool-bar-button
   '((default
@@ -679,9 +676,9 @@ KEY is the menu item key."
   (let ((tool-bar-always-show-default nil))
     (if (and (version< emacs-version "30")
              (eq 'text (window-tool-bar--style)))
-      ;; This code path is a less efficient workaround.
-      (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>"))))
+        ;; This code path is a less efficient workaround.
+        (window-tool-bar--make-keymap-1)
+      (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
