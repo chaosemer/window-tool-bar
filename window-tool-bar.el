@@ -194,6 +194,12 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-2>" #'window-tool-bar--call-button
 
   ;; Mouse down events do nothing.  A binding is needed so isearch
   ;; does not exit when the tab bar is clicked.
@@ -202,7 +208,13 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
   "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
 
 ;; Allow the window tool bar to be placed in header line or mode line
 ;; as well.  These use different keymap prefixes.
