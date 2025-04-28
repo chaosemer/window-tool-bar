@@ -329,6 +329,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (button-spec (plist-get plist :button))
                 (button-selected (eval (cdr-safe button-spec)))
                 (vert-only (plist-get plist :vert-only))
+                (style (window-tool-bar--style))
                 image-start
                 image-end)
 	   ;; Ensure STR is never the empty string, which wouldn't
@@ -339,7 +340,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
 
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
-           (pcase-exhaustive (window-tool-bar--style)
+           (pcase-exhaustive style
              ((or 'image 'unicode-image)
               (setf image-start 0
                     image-end len))
@@ -364,12 +365,21 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            ;; First replace the image with a text icon (if applicable)
            ;; so we get all the remaining text properties.
            (when (and image-start image-end)
-             (let ((before (substring str 0 image-start))
-                   (after (substring str image-end)))
-               (setf str (concat before
-                                 (window-tool-bar--find-unicode-icon key)
-                                 after)
-                     len (length str))))
+             (if (equal style 'unicode-image)
+                 (let ((before (substring str 0 image-start))
+                       (after (substring str image-end)))
+                   (setf str (concat before
+                                     (window-tool-bar--find-unicode-icon key)
+                                     after)
+                         len (length str)))
+               (when-let* ((spec (plist-get menu-item :image)))
+                 (put-text-property image-start image-end
+                                    'display
+                                    (append spec
+                                            (if enabled '(:margin 2 :ascent center)
+                                              '(:margin 2 :ascent center
+                                                        :conversion disabled)))
+                                    str))))
 
            (cond
             ((and enabled button-selected)
@@ -391,6 +401,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                 'face
                                 'window-tool-bar-button-disabled
                                 str)))
+
            (let ((help-text (or (plist-get plist :help) name))
                  (keys (where-is-internal binding nil t)))
              (put-text-property 0 len
@@ -606,7 +617,7 @@ KEY is the menu item key."
               ;; Now that we have a name, find the appropriate icon
               (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
         ;; FIXME: Do a display-based-fallback
-        (car icon-list) "?")))
+        (car icon-list) icon-name)))
 
 (defface window-tool-bar-button
   '((default
