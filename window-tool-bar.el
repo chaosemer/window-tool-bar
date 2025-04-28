@@ -575,22 +575,34 @@ start Emacs with \"emacs -nw\"."
   :package-version '(window-tool-bar . "0.3"))
 
 (defcustom window-tool-bar-unicode-image-map
-  (copy-tree '(;; Prefer text in CP437 for display compatibility.
-               (close "x")
-               (exit "🚪")              ;no good sym in CP437
-               (help "🛟")              ;no good sym in CP437
-               (home "⌂")
-               (index "§")
-               (jump-to "☼")
-               (left-arrow "←")
-               (next-node "►")
-               (prev-node "◄")
-               (right-arrow "→")
-               (search "🔍")            ;no good sym in CP437
-               (search-replace "📝")    ;no good sym in CP437
-               (undo "↶")               ;no good sym in CP437
-               (up-node "▲")
-               ))
+  (copy-tree '((new            "+")
+               (open           "⊕")
+               (diropen        "⊞")
+               (close          "⨉")
+               (save           "↓")
+               (undo           "↶")
+               (cut            "⊗")
+               (copy           "❐")
+               (paste          "⎀")
+               (search         "⌕")
+               (help           "?")
+               (index          "i")
+               (search-replace "⇆")
+               (exit           "⎋")
+               (right-arrow    "→")
+               (left-arrow     "←")
+               (next-node      "↘")
+               (prev-node      "↖")
+               (up-node        "⤒")
+               (home           "⌂")
+               (jump-to        "↪")
+               (refresh        "↻")
+               (delete         "⨉")
+               (pdftex         "⏵")
+               (viewpdf        "⇥")
+               (bibtex         "B")
+               (spell          "✓")
+               (hide           "−")))
   "Mapping of image names to Unicode symbols that can be used as icons."
   :type '(list symbol string)
   :group 'window-tool-bar
