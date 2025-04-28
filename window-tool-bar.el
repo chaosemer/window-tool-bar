@@ -369,7 +369,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                  (let ((before (substring str 0 image-start))
                        (after (substring str image-end)))
                    (setf str (concat before
-                                     (window-tool-bar--find-unicode-icon key)
+                                     (window-tool-bar--find-unicode-icon plist)
                                      after)
                          len (length str)))
                (when-let* ((spec (plist-get menu-item :image)))
@@ -596,28 +596,26 @@ start Emacs with \"emacs -nw\"."
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "1.0"))
 
-(defun window-tool-bar--find-unicode-icon (key)
+(defun window-tool-bar--find-unicode-icon (plist)
   "Return the unicode icon for a tool-bar button.
 
 KEY is the menu item key."
-  (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
-         (item (assq key tool-bar-items)))
-    (if-let* ((plist (and item
-                          (eq (cadr item) 'menu-item)
-                          (cddddr item))) ;Skip key, menu-item, string, binding
-              (image-expr (plist-get plist :image))
-
-              ;; This depends on `tool-bar--image-expression'
-              ;; internals, specifically that the first string in the
-              ;; expression is always a file name.
-              (image (if (functionp (car image-expr)) (eval image-expr) image-expr))
-              (image-expr-file-name (plist-get (cdr image) :file))
-              (icon-name (intern (file-name-base image-expr-file-name)))
-
+  ;; Method 1: get image base name
+  (if-let* ((image-expr (plist-get plist :image))
+            ;; This depends on `tool-bar--image-expression'
+            ;; internals, specifically that the first string in the
+            ;; expression is always a file name.
+            (image (if (functionp (car image-expr)) (eval image-expr) image-expr))
+            (image-expr-file-name (plist-get (cdr image) :file))
+            (icon-name (intern (file-name-base image-expr-file-name)))
+            ;; Now that we have a name, find the appropriate icon
+            (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
+      (car icon-list)
+    ;; Method 2: use Label as fallback
+    (if-let* ((icon-name (intern (downcase (plist-get plist :label))))
               ;; Now that we have a name, find the appropriate icon
               (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
-        ;; FIXME: Do a display-based-fallback
-        (car icon-list) icon-name)))
+        (car icon-list) (or (symbol-name icon-name) "?"))))
 
 (defface window-tool-bar-button
   '((default
