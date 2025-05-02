@@ -619,15 +619,16 @@ KEY is the menu item key."
             ;; expression is always a file name.
             (image (if (functionp (car image-expr)) (eval image-expr) image-expr))
             (image-expr-file-name (plist-get (cdr image) :file))
-            (icon-name (intern (file-name-base image-expr-file-name)))
+            (icon-name1 (intern (file-name-base image-expr-file-name)))
             ;; Now that we have a name, find the appropriate icon
-            (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
+            (icon-list (alist-get icon-name1 window-tool-bar-unicode-image-map)))
       (car icon-list)
-    ;; Method 2: use Label as fallback
-    (if-let* ((icon-name (intern (downcase (plist-get plist :label))))
+    ;; Method 2: use label as fallback
+    (if-let* ((label (plist-get plist :label))
+              (icon-name2 (intern (downcase label)))
               ;; Now that we have a name, find the appropriate icon
-              (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
-        (car icon-list) (or (symbol-name icon-name) "?"))))
+              (icon-list (alist-get icon-name2 window-tool-bar-unicode-image-map)))
+        (car icon-list) (or (symbol-name (or icon-name1 icon-name2)) "?"))))
 
 (defface window-tool-bar-button
   '((default
