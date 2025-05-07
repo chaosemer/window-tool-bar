@@ -274,9 +274,10 @@ This is for when you want more customizations than the command
                ;; box starts at the leftmost pixel of the tab-line.
                ;; Add a single space in this case so the box displays
                ;; correctly.
-               (and (display-supports-face-attributes-p
-                     '(:box (line-width 1)))
-                    (propertize " " 'display '(space :width (1))))
+               ;; TODO: This causes problems on the mode-line when overline is enabled
+               ;; (and (display-supports-face-attributes-p
+               ;;       '(:box (line-width 1)))
+               ;;      (propertize "    " 'display '(space :width (2))))
                result))
         (cl-incf window-tool-bar--refresh-done-count))
     (cl-incf window-tool-bar--refresh-skipped-count))
@@ -364,12 +365,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            ;; so we get all the remaining text properties.
            (when (and image-start image-end)
              (if (equal style 'unicode-image)
-                 (let ((before (substring str 0 image-start))
-                       (after (substring str image-end)))
-                   (setf str (concat before
-                                     (window-tool-bar--find-unicode-icon plist)
-                                     after)
-                         len (length str)))
+                 (setf str (window-tool-bar--find-unicode-icon plist)
+                       len (length str))
                (when-let* ((spec (plist-get menu-item :image)))
                  (put-text-property image-start image-end
                                     'display
