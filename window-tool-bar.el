@@ -33,7 +33,7 @@
 ;; This package puts a tool bar in each window.  This allows you to see
 ;; multiple tool bars simultaneously directly next to the buffer it
 ;; acts on which feels much more intuitive.  Emacs "browsing" modes
-;; generally have sensible tool bars, for example: *info*, *help*, and
+;; generally have sensible tool bars, for example: *info*, *Help*, and
 ;; *eww* have them.
 ;;
 ;; It does this while being mindful of screen real estate.  If
@@ -42,9 +42,12 @@
 ;; so calling (setq tool-bar-map nil) in your init file will make most
 ;; buffers not take up space for a tool bar.
 ;;
-;; To get the default behavior, run (global-window-tool-bar-mode 1) or
-;; enable via M-x customize-group RET window-tool-bar RET.  This uses
-;; the per-window tab line to show the tool bar.
+;; The default behavior is to make the per-window tab line show the
+;; tool bar for each window's buffer.  To enable this, add
+;; (global-window-tool-bar-mode) to your init file or enable via M-x
+;; customize-group RET window-tool-bar RET.  If you want to enable the
+;; window tool bar for only specific modes, you can add
+;; `window-tool-bar-mode' to mode specific hooks.
 ;;
 ;; If you want to share space with an existing tab line, mode line, or
 ;; header line, add (:eval (window-tool-bar-string)) to
@@ -63,11 +66,6 @@
 ;; On GNU Emacs 29 and earlier, performance in terminals is lower than
 ;; on graphical frames.  This is due to a workaround, see "Workaround
 ;; for https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68334", below.
-;;
-;; Dragging empty space on the tab-line (which this package uses to
-;; display the window tool bar) doesn't resize windows.  This is
-;; unlike the mode line, where dragging empty space resizes the
-;; window.
 
 ;;; Todo:
 ;;
@@ -91,6 +89,11 @@
 (require 'mwheel)
 (require 'tab-line)
 (require 'tool-bar)
+
+(add-to-list 'customize-package-emacs-version-alist
+             '(window-tool-bar ("0.1" . "30.1")
+                               ("0.2" . "30.1")
+                               ("0.3" . "31.1")))
 
 ;;; Benchmarking code
 ;;
@@ -194,6 +197,12 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-2>" #'window-tool-bar--call-button
 
   ;; Mouse down events do nothing.  A binding is needed so isearch
   ;; does not exit when the tab bar is clicked.
@@ -202,7 +211,23 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
   "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+
+;; Allow the window tool bar to be placed in header line or mode line
+;; as well.  These use different keymap prefixes.
+(keymap-set window-tool-bar--button-keymap
+            "<header-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+(keymap-set window-tool-bar--button-keymap
+            "<mode-line>"
+            (keymap-lookup window-tool-bar--button-keymap "<tab-line>"))
+
 (fset 'window-tool-bar--button-keymap window-tool-bar--button-keymap) ; So it can be a keymap property
 
 ;; Register bindings that stay in isearch.  Technically, these
@@ -233,9 +258,7 @@ This is for when you want more customizations than the command
                                 (delete nil strs)
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
-                                (if t ;; (eq 'text (window-tool-bar--style))
-                                    " "
-                                  (propertize " " 'invisible t))))
+                                (propertize " " 'display '(space-width 0.2))))
              (mem2 (memory-use-counts)))
         (cl-mapl (lambda (l-init l0 l1)
                    (cl-incf (car l-init) (- (car l1) (car l0))))
@@ -251,9 +274,10 @@ This is for when you want more customizations than the command
                ;; box starts at the leftmost pixel of the tab-line.
                ;; Add a single space in this case so the box displays
                ;; correctly.
-               (and (display-supports-face-attributes-p
-                     '(:box (line-width 1)))
-                    (propertize " " 'display '(space :width (1))))
+               ;; TODO: This causes problems on the mode-line when overline is enabled
+               ;; (and (display-supports-face-attributes-p
+               ;;       '(:box (line-width 1)))
+               ;;      (propertize "    " 'display '(space :width (2))))
                result))
         (cl-incf window-tool-bar--refresh-done-count))
     (cl-incf window-tool-bar--refresh-skipped-count))
@@ -262,9 +286,9 @@ This is for when you want more customizations than the command
 
 (defconst window-tool-bar--graphical-separator
   (concat
-   (propertize " " 'display '(space :width (4)))
-   (propertize " " 'display '(space :width (1) face (:inverse-video t)))
-   (propertize " " 'display '(space :width (4)))))
+   (propertize " " 'display '(space-width 0.4))
+   (propertize " " 'display '(space-width 0.2) 'face '(:inverse-video t))
+   (propertize " " 'display '(space-width 0.4))))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
@@ -304,13 +328,19 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                 (button-spec (plist-get plist :button))
                 (button-selected (eval (cdr-safe button-spec)))
                 (vert-only (plist-get plist :vert-only))
+                (style (window-tool-bar--style))
                 image-start
                 image-end)
+	   ;; Ensure STR is never the empty string, which wouldn't
+	   ;; display at all when concat'ed together.
+	   (when (string-empty-p str)
+	     (setf str (symbol-name binding)
+		   len (length str)))
 
            ;; Depending on style, Images can be displayed to the
            ;; left, to the right, or in place of the text
-           (pcase-exhaustive (window-tool-bar--style)
-             ('image
+           (pcase-exhaustive style
+             ((or 'image 'unicode-image)
               (setf image-start 0
                     image-end len))
              ('text
@@ -334,12 +364,17 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
            ;; First replace the image with a text icon (if applicable)
            ;; so we get all the remaining text properties.
            (when (and image-start image-end)
-             (let ((before (substring str 0 image-start))
-                   (after (substring str image-end)))
-             (setf str (concat before
-                                 (window-tool-bar--find-unicode-icon key)
-                                 after)
-                   len (length str))))
+             (if (equal style 'unicode-image)
+                 (setf str (window-tool-bar--find-unicode-icon plist)
+                       len (length str))
+               (when-let* ((spec (plist-get menu-item :image)))
+                 (put-text-property image-start image-end
+                                    'display
+                                    (append spec
+                                            (if enabled '(:margin 2 :ascent center)
+                                              '(:margin 2 :ascent center
+                                                        :conversion disabled)))
+                                    str))))
 
            (cond
             ((and enabled button-selected)
@@ -351,7 +386,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   str))
             (enabled
              (add-text-properties 0 len
-                                  '(mouse-face window-tool-bar-button-hover
+                                  '(mouse-face
+                                    window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
                                     face window-tool-bar-button)
                                   str))
@@ -360,6 +396,7 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                 'face
                                 'window-tool-bar-button-disabled
                                 str)))
+
            (let ((help-text (or (plist-get plist :help) name))
                  (keys (where-is-internal binding nil t)))
              (put-text-property 0 len
@@ -372,7 +409,11 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   help-text)
                                 str))
            (put-text-property 0 len 'tool-bar-key key str)
-           str))))))
+           str))))
+
+    ;; Non-menu items that don't get a button.
+    (`(,_ . ,(pred symbolp))
+     nil)))
 
 (defun window-tool-bar--call-button ()
   "Call the button that was clicked on in the tab line."
@@ -384,6 +425,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
       (select-window (posn-window posn))
       (let* ((str (posn-string posn))
              (key (get-text-property (cdr str) 'tool-bar-key (car str)))
+             ;; FIXME: Use modifier keys which may have a different
+             ;; binding.
              (cmd (lookup-key (window-tool-bar--get-keymap) (vector key))))
         (call-interactively cmd)))))
 
@@ -408,7 +451,7 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 (defvar window-tool-bar--ignored-event-types
   (let ((list (append
                '(mouse-movement pinch
-                 wheel-down wheel-up wheel-left wheel-right)
+                                wheel-down wheel-up wheel-left wheel-right)
                ;; Prior to emacs 30, wheel events could also surface as
                ;; mouse-<NUM> buttons.
                (window-tool-bar--static-if (version< emacs-version "30")
@@ -431,8 +474,8 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
      ;; interactions that can alter the tool bar.  Specifically, this
      ;; excludes mouse movement, mouse wheel scroll, and pinch.
      (not (member type window-tool-bar--ignored-event-types))
-     ;; Assume that any command that triggers shift select can't alter
-     ;; the tool bar.  This excludes pure navigation commands.
+     ;; Assume that any command that triggers shift select cannot
+     ;; alter the tool bar.  This excludes pure navigation commands.
      (not (window-tool-bar--command-triggers-shift-select-p last-command))
      ;; Assume that self-insert-command won't alter the tool bar.
      ;; This is the most commonly executed command.
@@ -480,20 +523,22 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 ;;; Display styling:
 (defcustom window-tool-bar-style 'image
   "Tool bar style to use for window tool bars.
-The meanining is the same as for `tool-bar-style', which see.  If
+The meaning is the same as for `tool-bar-style', which see.  If
 set to the symbol `tool-bar-style', then use the value of
 `tool-bar-style' instead.
 
-When images can not be displayed (see `display-images-p'), text
-is used."
-  :type '(choice (const :tag "Images" :value image)
-                 (const :tag "Text" :value text)
-                 ;; This option would require multiple tool bar lines.
-                 ;;(const :tag "Both" :value both)
-                 (const :tag "Both-horiz" :value both-horiz)
-                 (const :tag "Text-image-horiz" :value text-image-horiz)
-                 (const :tag "Inherit tool-bar-style" :value tool-bar-style)
-                 (const :tag "System default" :value nil))
+When images cannot be displayed (see `display-images-p'), the value set
+here is ignored and the window tool bar displays text."
+  :type '(choice
+          (const :tag "Images" :value image)
+          (const :tag "Uncode Images" :value unicode-image)
+          (const :tag "Text" :value text)
+          ;; This option would require multiple tool bar lines.
+          ;;(const :tag "Both, text below image" :value both)
+          (const :tag "Both, text to right of image" :value both-horiz)
+          (const :tag "Both, text to left of image" :value text-image-horiz)
+          (const :tag "Inherit tool-bar-style" :value tool-bar-style)
+          (const :tag "System default" :value nil))
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "0.3"))
 
@@ -509,7 +554,7 @@ will always return text."
     (let ((style window-tool-bar-style))
       (when (eq style 'tool-bar-style)
         (setf style tool-bar-style))
-      (unless (memq style '(image text both both-horiz text-image-horiz))
+      (unless (memq style '(unicode-image image text both both-horiz text-image-horiz))
         (setf style (if (fboundp 'tool-bar-get-system-style)
                         (tool-bar-get-system-style)
                       'image)))
@@ -525,53 +570,60 @@ start Emacs with \"emacs -nw\"."
   :package-version '(window-tool-bar . "0.3"))
 
 (defcustom window-tool-bar-unicode-image-map
-  (copy-tree '(;; Prefer text in CP437 for display compatibility.
-               (close "x")
-               (exit "🚪")              ;no good sym in CP437
-               (help "🛟")              ;no good sym in CP437
-               (home "⌂")
-               (index "§")
-               (jump-to "☼")
-               (left-arrow "←")
-               (next-node "►")
-               (prev-node "◄")
-               (right-arrow "→")
-               (search "🔍")            ;no good sym in CP437
-               (search-replace "📝")    ;no good sym in CP437
-               (undo "↶")               ;no good sym in CP437
-               (up-node "▲")
-               ))
+  (copy-tree '((new            "+")
+               (open           "⊕")
+               (diropen        "⊞")
+               (close          "⨉")
+               (save           "↓")
+               (undo           "↶")
+               (cut            "⊗")
+               (copy           "❐")
+               (paste          "⎀")
+               (search         "⌕")
+               (help           "?")
+               (index          "i")
+               (search-replace "⇆")
+               (exit           "⎋")
+               (right-arrow    "→")
+               (left-arrow     "←")
+               (next-node      "↘")
+               (prev-node      "↖")
+               (up-node        "⤒")
+               (home           "⌂")
+               (jump-to        "↪")
+               (refresh        "↻")
+               (delete         "⨉")
+               (pdftex         "⏵")
+               (viewpdf        "⇥")
+               (bibtex         "B")
+               (spell          "✓")
+               (hide           "−")))
   "Mapping of image names to Unicode symbols that can be used as icons."
-  :type '(list string string)
+  :type '(list symbol string)
   :group 'window-tool-bar
   :package-version '(window-tool-bar . "1.0"))
 
-(defun window-tool-bar--find-unicode-icon (key plist)
+(defun window-tool-bar--find-unicode-icon (plist)
   "Return the unicode icon for a tool-bar button.
 
 KEY is the menu item key."
-  (let* ((tool-bar-items (cddar (accessible-keymaps tool-bar-map)))
-         (item (assq key tool-bar-items)))
-    (when-let* ((plist (and item
-                            (eq (cadr item) 'menu-item)
-                            (cddddr item))) ;Skip key, menu-item, string, binding
-               (image-expr (plist-get plist :image))
-
-               ;; This depends on `tool-bar--image-expression'
-               ;; internals, specifically that the first string in the
-               ;; expression is always a file name.
-               (image-expr-cond (and (eq (car image-expr) 'find-image)
-                                     (eq (caadr image-expr) 'cond)
-                                     (cdadr image-expr)))
-               (image-expr-quoted-specs (cadar image-expr-cond))
-               (image-expr-first-spec (caadr image-expr-quoted-specs))
-               (image-expr-file-name (plist-get image-expr-first-spec :file))
-               (icon-name (intern (file-name-sans-extension image-expr-file-name)))
-
-               ;; Now that we have a name, find the appropriate icon
-               (icon-list (alist-get icon-name window-tool-bar-unicode-image-map)))
-      ;; FIXME: Do a display-based-fallback
-      (car icon-list))))
+  ;; Method 1: get image base name
+  (if-let* ((image-expr (plist-get plist :image))
+            ;; This depends on `tool-bar--image-expression'
+            ;; internals, specifically that the first string in the
+            ;; expression is always a file name.
+            (image (if (functionp (car image-expr)) (eval image-expr) image-expr))
+            (image-expr-file-name (plist-get (cdr image) :file))
+            (icon-name1 (intern (file-name-base image-expr-file-name)))
+            ;; Now that we have a name, find the appropriate icon
+            (icon-list (alist-get icon-name1 window-tool-bar-unicode-image-map)))
+      (car icon-list)
+    ;; Method 2: use label as fallback
+    (if-let* ((label (plist-get plist :label))
+              (icon-name2 (intern (downcase label)))
+              ;; Now that we have a name, find the appropriate icon
+              (icon-list (alist-get icon-name2 window-tool-bar-unicode-image-map)))
+        (car icon-list) (or (symbol-name (or icon-name1 icon-name2)) "?"))))
 
 (defface window-tool-bar-button
   '((default
@@ -654,9 +706,9 @@ KEY is the menu item key."
   (let ((tool-bar-always-show-default nil))
     (if (and (version< emacs-version "30")
              (eq 'text (window-tool-bar--style)))
-      ;; This code path is a less efficient workaround.
-      (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>"))))
+        ;; This code path is a less efficient workaround.
+        (window-tool-bar--make-keymap-1)
+      (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
