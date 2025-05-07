@@ -258,9 +258,7 @@ This is for when you want more customizations than the command
                                 (delete nil strs)
                                 ;; Without spaces between the text, hovering
                                 ;; highlights all adjacent buttons.
-                                (if t ;; (eq 'text (window-tool-bar--style))
-                                    " "
-                                  (propertize " " 'invisible t))))
+                                (propertize " " 'display '(space-width 0.2))))
              (mem2 (memory-use-counts)))
         (cl-mapl (lambda (l-init l0 l1)
                    (cl-incf (car l-init) (- (car l1) (car l0))))
@@ -287,9 +285,9 @@ This is for when you want more customizations than the command
 
 (defconst window-tool-bar--graphical-separator
   (concat
-   (propertize " " 'display '(space :width (4)))
-   (propertize " " 'display '(space :width (1) face (:inverse-video t)))
-   (propertize " " 'display '(space :width (4)))))
+   (propertize " " 'display '(space-width 0.4))
+   (propertize " " 'display '(space-width 0.2) 'face '(:inverse-video t))
+   (propertize " " 'display '(space-width 0.4))))
 
 (defun window-tool-bar--keymap-entry-to-string (menu-item)
   "Convert MENU-ITEM into a (propertized) string representation.
