@@ -135,6 +135,7 @@ The total number of requests is the sum of this and
 
 (declare-function time-stamp-string "time-stamp")
 
+;;;###autoload
 (defun window-tool-bar-debug-show-memory-use ()
   "Development-only command to show memory used by `window-tool-bar-string'."
   (interactive)
