@@ -195,6 +195,12 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <double-mouse-2>" #'window-tool-bar--call-button
   "<tab-line> <triple-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-1>" #'window-tool-bar--call-button
+  "<mode-line> <mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <double-mouse-2>" #'window-tool-bar--call-button
+  "<mode-line> <triple-mouse-2>" #'window-tool-bar--call-button
 
   ;; Mouse down events do nothing.  A binding is needed so isearch
   ;; does not exit when the tab bar is clicked.
@@ -203,7 +209,13 @@ AVG-MEMORY-USE is a list of averages, with the same meaning as
   "<tab-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
   "<tab-line> <down-mouse-2>" #'window-tool-bar--ignore
   "<tab-line> <double-down-mouse-2>" #'window-tool-bar--ignore
-  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
+  "<tab-line> <triple-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-1>" #'window-tool-bar--ignore
+  "<mode-line> <down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <double-down-mouse-2>" #'window-tool-bar--ignore
+  "<mode-line> <triple-down-mouse-2>" #'window-tool-bar--ignore)
 
 ;; Allow the window tool bar to be placed in header line or mode line
 ;; as well.  These use different keymap prefixes.
@@ -355,7 +367,8 @@ MENU-ITEM is a menu item to convert.  See info node `(elisp)Tool Bar'."
                                   str))
             (enabled
              (add-text-properties 0 len
-                                  '(mouse-face window-tool-bar-button-hover
+                                  '(mouse-face
+                                    window-tool-bar-button-hover
                                     keymap window-tool-bar--button-keymap
                                     face window-tool-bar-button)
                                   str))
@@ -427,7 +440,7 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
 (defvar window-tool-bar--ignored-event-types
   (let ((list (append
                '(mouse-movement pinch
-                 wheel-down wheel-up wheel-left wheel-right)
+                                wheel-down wheel-up wheel-left wheel-right)
                ;; Prior to emacs 30, wheel events could also surface as
                ;; mouse-<NUM> buttons.
                (window-tool-bar--static-if (version< emacs-version "30")
@@ -615,9 +628,9 @@ will always return the symbol text."
   (let ((tool-bar-always-show-default nil))
     (if (and (version< emacs-version "30")
              (eq 'text (window-tool-bar--style)))
-      ;; This code path is a less efficient workaround.
-      (window-tool-bar--make-keymap-1)
-    (keymap-global-lookup "<tool-bar>"))))
+        ;; This code path is a less efficient workaround.
+        (window-tool-bar--make-keymap-1)
+      (keymap-global-lookup "<tool-bar>"))))
 
 (declare-function image-mask-p "image.c" (spec &optional frame))
 
