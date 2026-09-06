@@ -7,7 +7,7 @@
 ;; Version: 0.3
 ;; Keywords: mouse
 ;; URL: http://github.com/chaosemer/window-tool-bar
-;; Package-Requires: ((emacs "27.1") (compat "30"))
+;; Package-Requires: ((emacs "27.1") (compat "31"))
 
 ;; This is a GNU ELPA :core package.  Avoid adding functionality that
 ;; is not available in the version of Emacs recorded above or any of
